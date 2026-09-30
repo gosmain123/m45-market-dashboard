@@ -85,7 +85,11 @@ jobs:
                   missing.append(name)
           if missing:
               raise SystemExit('Critical dashboard fields missing: '+', '.join(missing))
-          print('Critical dashboard QA passed')
+          core=d.get('core_tape',[])
+          val_count=sum(1 for r in core if (r.get('valuation') or {}).get('metric') not in (None,'N/M'))
+          if val_count < max(20, int(len(core)*0.70)):
+              raise SystemExit(f'Valuation coverage too low: {val_count}/{len(core)} core names')
+          print(f'Critical dashboard QA passed; valuation coverage {val_count}/{len(core)}')
           PY
 
       - name: Commit refreshed snapshot
