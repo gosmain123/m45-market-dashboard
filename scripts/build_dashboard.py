@@ -915,9 +915,148 @@ def build_commentary(payload):
             'third ask whether credit confirms the risk move; fourth use the dollar and commodities to classify the macro impulse; fifth check whether the single-name tape agrees with the sector story; and finally map the next catalyst to the asset that should react first. '
             'If those pieces line up, conviction is high. If they conflict, keep the interpretation conditional rather than forcing one narrative.')
 
+    # Connected daily storyline: one main spine, with explicit branches where the tape diverges.
+    if None not in (y2,y10) and y2<0<y10:
+        story_start={
+          'kicker':'STARTING POINT · RATES',
+          'title':'The front end eased, but the long end sold off',
+          'body':f'2Y moved {bps(y2)} while 10Y moved {bps(y10)} and 30Y {bps(y30)}. That immediately argues against a simple “Fed turned more hawkish” explanation and shifts the first question to long-duration compensation: real yields, inflation compensation and term premium.',
+          'tone':'warning'
+        }
+    elif brent is not None and abs(brent)>=2 and y10 is not None and y10>0:
+        story_start={
+          'kicker':'STARTING POINT · INFLATION',
+          'title':'The first pressure point was inflation-sensitive markets',
+          'body':f'Brent moved {pct(brent)} while the 10Y rose {bps(y10)}. That combination raises the nominal discount rate and keeps the inflation tail alive, so long-duration assets need stronger earnings or theme support to offset the macro drag.',
+          'tone':'warning'
+        }
+    elif None not in (sox,ndx) and abs(sox-ndx)>=1:
+        story_start={
+          'kicker':'STARTING POINT · EQUITY LEADERSHIP',
+          'title':'The index hid a much bigger leadership split underneath',
+          'body':f'SOX moved {pct(sox)} versus Nasdaq {pct(ndx)}. The first useful read was therefore not “stocks up or down,” but whether the market was rewarding a specific AI / semiconductor theme or a broad growth impulse.',
+          'tone':'supportive' if sox>ndx else 'warning'
+        }
+    else:
+        story_start={
+          'kicker':'STARTING POINT · CROSS-ASSET',
+          'title':'The day began as a mixed cross-asset signal',
+          'body':f'S&P {pct(spx)}, Nasdaq {pct(ndx)}, SOX {pct(sox)} and 10Y {bps(y10)} did not line up into one clean risk-on / risk-off message. The right starting point is therefore to trace which markets confirmed each other and which did not.',
+          'tone':'mixed'
+        }
+
+    transmission_bits=[]
+    if None not in (y2,y10,y30):
+        if y2<0<y10:
+            transmission_bits.append('Rates transmitted through the long end rather than the Fed-sensitive front end.')
+        elif y2>0 and y10>0:
+            transmission_bits.append('Rates repriced broadly higher, so both policy expectations and duration pressure mattered.')
+        elif y2<0 and y10<0:
+            transmission_bits.append('Rates eased across the curve, giving duration-sensitive assets a macro tailwind.')
+    if None not in (sox,ndx):
+        if sox>ndx+0.75: transmission_bits.append('Equities did not respond uniformly: semiconductors materially outperformed broad tech.')
+        elif sox<ndx-0.75: transmission_bits.append('Semiconductors became the weak link inside technology.')
+        else: transmission_bits.append('Equity leadership was relatively broad within technology.')
+    if brent is not None and abs(brent)>=1:
+        transmission_bits.append(f'Oil moved {pct(brent)}, adding an inflation / growth cross-check.')
+    story_transmission={
+      'kicker':'TRANSMISSION',
+      'title':'How the initial signal spread through the tape',
+      'body':' '.join(transmission_bits) if transmission_bits else 'The initial move did not produce a strong secondary confirmation, so the day remained mostly a relative-value and positioning story.',
+      'tone':'mixed'
+    }
+
+    story_branches=[]
+    # Branch 1: equities / breadth
+    eq_state='mixed'
+    eq_title='Equity branch · breadth versus concentration'
+    eq_text=f'S&P {pct(spx)}, Nasdaq {pct(ndx)}, SOX {pct(sox)}'
+    if rut is not None: eq_text+=f' and Russell 2000 {pct(rut)}'
+    eq_text+='.'
+    if None not in (sox,ndx) and sox>ndx+0.75:
+        eq_state='supportive'; eq_text+=' Semis led by enough to call the move thematic rather than simply broad beta.'
+    elif None not in (sox,ndx) and sox<ndx-0.75:
+        eq_state='warning'; eq_text+=' Semis lagged broad tech, weakening the AI leadership signal.'
+    if equal and equal.get('1m') is not None and mv('spx','1m') is not None:
+        eq_gap=equal.get('1m')-mv('spx','1m')
+        eq_text+=f' Equal Weight is {eq_gap:+.2f}% versus the S&P over one month.'
+        if eq_gap<-1: eq_text+=' That keeps breadth narrow.'
+    story_branches.append({'title':eq_title,'body':eq_text,'tone':eq_state,'tag':'EQUITIES'})
+
+    # Branch 2: rates decomposition
+    rate_state='mixed'
+    rate_text=f'2Y {num(y2lvl,2)}% ({bps(y2)}), 10Y {num(y10lvl,2)}% ({bps(y10)}), 30Y {num(y30lvl,2)}% ({bps(y30)}).'
+    if reallvl is not None: rate_text+=f' 10Y real yield {num(reallvl,2)}%.'
+    if belvl is not None: rate_text+=f' Breakeven proxy {num(belvl,2)}%.'
+    if tplvl is not None: rate_text+=f' ACM term premium {num(tplvl,2)}% ({bps(tp)}).'
+    if y2 is not None and y10 is not None and y2<0<y10:
+        rate_state='warning'; rate_text+=' The divergence says the pressure sits further out the curve, not primarily in the next-Fed-move expectation.'
+    elif y10 is not None and y10<0:
+        rate_state='supportive'; rate_text+=' Falling long yields are a cleaner valuation tailwind.'
+    story_branches.append({'title':'Rates branch · what actually repriced','body':rate_text,'tone':rate_state,'tag':'RATES'})
+
+    # Branch 3: credit confirmation
+    if None not in (iglvl,hylvl,ccclvl):
+        cr_text=f'IG {iglvl*100:.0f} bp, HY {hylvl*100:.0f} bp, CCC {ccclvl*100:.0f} bp.'
+        if None not in (ig,hy,ccc):
+            cr_text+=f' Latest changes: IG {ig*100:+.0f} bp, HY {hy*100:+.0f} bp, CCC {ccc*100:+.0f} bp.'
+            if ccc>hy>ig:
+                cr_state='warning'; cr_text+=' Widening increases down-quality, so credit is confirming a more fundamental risk signal.'
+            elif hy<=0 and ccc<=0:
+                cr_state='supportive'; cr_text+=' Credit is not confirming stress, which keeps the broader story closer to rates / positioning than funding deterioration.'
+            else:
+                cr_state='mixed'; cr_text+=' Credit confirmation is partial rather than decisive.'
+        else:
+            cr_state='mixed'; cr_text+=' Spread levels are available, but daily confirmation is limited.'
+    else:
+        cr_state='mixed'; cr_text='Credit is being carried from the latest available EOD observation; the dashboard keeps the as-of date visible rather than converting missing data into a false zero.'
+    story_branches.append({'title':'Credit branch · did the move become a risk event?','body':cr_text,'tone':cr_state,'tag':'CREDIT'})
+
+    # Branch 4: macro cross-check
+    macro_state='mixed'
+    macro_parts=[]
+    if dxy is not None: macro_parts.append(f'DXY {pct(dxy)}')
+    if brent is not None: macro_parts.append(f'Brent {pct(brent)}')
+    if gold is not None: macro_parts.append(f'gold {pct(gold)}')
+    if copper is not None: macro_parts.append(f'copper {pct(copper)}')
+    macro_text=', '.join(macro_parts)+'.' if macro_parts else 'Macro cross-check data were limited.'
+    if brent is not None and brent>1 and y10 is not None and y10>0:
+        macro_state='warning'; macro_text+=' Oil and long yields moving higher together reinforce the inflation / duration branch.'
+    elif copper is not None and gold is not None and copper>gold+1:
+        macro_state='supportive'; macro_text+=' Copper outperforming gold adds a cyclical-growth confirmation.'
+    elif gold is not None and copper is not None and gold>copper+1:
+        macro_state='warning'; macro_text+=' Gold outperforming copper leans more defensive.'
+    story_branches.append({'title':'Macro branch · inflation, growth or hedge demand?','body':macro_text,'tone':macro_state,'tag':'CROSS-ASSET'})
+
+    if y2 is not None and y10 is not None and y2<0<y10 and None not in (sox,ndx) and sox>ndx+0.75:
+        resolution_title='The day landed on a split regime: long-end macro pressure, but concentrated AI strength'
+        resolution_body=('The branches do not fully converge into either risk-on or risk-off. Long-duration rates remain a headwind, yet semiconductor leadership shows that the market is still willing to pay for visible AI / compute earnings. '
+                         'That makes breadth and credit the tie-breakers: if they improve, the theme can broaden; if they deteriorate, concentrated leadership becomes more fragile.')
+    elif None not in (hy,ccc) and hy>0 and ccc>hy and spx is not None and spx<0:
+        resolution_title='The day finished as a broader risk-off move'
+        resolution_body=('Equity weakness was accompanied by worsening lower-quality credit, so the signal moved beyond valuation alone. The market was asking for more compensation for both duration and balance-sheet risk.')
+    elif risk>=25:
+        resolution_title='The day finished constructive, but confirmation still matters'
+        resolution_body=('Risk appetite stayed positive overall. The strongest version of this story would require small caps, equal weight and credit to participate rather than leaving the rally concentrated in a few large themes.')
+    elif risk<=-25:
+        resolution_title='The day finished defensive'
+        resolution_body=('Cross-asset signals leaned toward risk reduction. The key distinction for the next session is whether the stress remains rates-led or broadens further into credit and cyclical growth assets.')
+    else:
+        resolution_title='The day finished mixed rather than contradictory'
+        resolution_body=('Different branches were pricing different things. The correct takeaway is not to force one label, but to identify the dominant macro pressure, the pocket of equity leadership that resisted it, and the markets that did or did not confirm the move.')
+
+    storyline={
+      'start':story_start,
+      'transmission':story_transmission,
+      'branches':story_branches,
+      'resolution':{'kicker':'END STATE','title':resolution_title,'body':resolution_body,'tone':'mixed'},
+      'next':checks[:4],
+      'summary':meeting_summary
+    }
+
     return {'headline':headline,'dek':dek,'evidence':evidence,'meeting_summary':meeting_summary,
             'deep_sections':deep_sections,'stock_notes':stock_notes,'positioning':positioning,
-            'checks':checks,'bottom_line':bottom}
+            'checks':checks,'bottom_line':bottom,'storyline':storyline}
 
 # ---------------- PACKS ----------------
 def load_symbol_set(symbols):
