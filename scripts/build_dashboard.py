@@ -546,7 +546,7 @@ CALENDAR_METRICS = [
     (r'^Retail Sales Ex Autos MoM\b','Retail Sales','Ex-Autos MoM',2),
     (r'^Retail Sales Control Group MoM\b','Retail Sales','Control Group MoM',3),
 
-    (r'^ADP Employment Change\b','ADP Employment','ADP Employment Change',1),
+    (r'^ADP Employment Change(?! Weekly)\b','ADP Employment','ADP Employment Change',1),
     (r'^(?:Fed Interest Rate Decision|Federal Funds Rate)\b','FOMC Decision','Fed Funds Target',1),
 ]
 
