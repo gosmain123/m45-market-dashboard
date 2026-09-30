@@ -92,11 +92,24 @@ jobs:
         run: |
           git config user.name "market-dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+
+          cp site/data/dashboard.json /tmp/dashboard.json
+          git fetch origin main
+
+          CHANGED="$(git diff --name-only "$GITHUB_SHA" origin/main || true)"
+          if [ -n "$CHANGED" ] && [ "$CHANGED" != "site/data/dashboard.json" ]; then
+            echo "A newer code commit exists; skip publishing this snapshot. The newer workflow run will publish it."
+            echo "$CHANGED"
+            exit 0
+          fi
+
+          git reset --hard origin/main
+          cp /tmp/dashboard.json site/data/dashboard.json
           git add site/data/dashboard.json
+
           if git diff --cached --quiet; then
             echo "No data change."
           else
             git commit -m "data: refresh dashboard"
-            git pull --rebase origin main
-            git push
+            git push origin HEAD:main
           fi
