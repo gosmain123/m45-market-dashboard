@@ -1477,7 +1477,7 @@ def yahoo_valuation_pack(symbols):
                     'eps_forward':rawv(ds.get('forwardEps')),
                     'eps_ttm':rawv(ds.get('trailingEps')),
                     'price_to_sales':rawv(sd.get('priceToSalesTrailing12Months')),
-                    'dividend_yield':rawv(sd.get('dividendYield')) or rawv(sd.get('yield')),
+                    'dividend_yield':((rawv(sd.get('dividendYield')) or rawv(sd.get('yield')))*100 if (rawv(sd.get('dividendYield')) or rawv(sd.get('yield'))) is not None and abs(rawv(sd.get('dividendYield')) or rawv(sd.get('yield'))) < 0.2 else (rawv(sd.get('dividendYield')) or rawv(sd.get('yield')))),
                     'market_cap':rawv(sd.get('marketCap')),
                     'currency':None,'source':'Yahoo Finance quoteSummary'
                 }
@@ -1503,7 +1503,7 @@ def _rawv(x):
 
 def _pct100(x):
     v=_rawv(x)
-    return None if v is None else (v*100 if abs(v)<=2 else v)
+    return None if v is None else v*100
 
 def yahoo_fundamental_detail_pack(symbols):
     """Richer stock fundamentals for core names / material movers only."""
@@ -1655,10 +1655,9 @@ def equity_etf_lens(symbols):
         pe=r.get('forward_pe') if r.get('forward_pe') and r.get('forward_pe')>0 else r.get('trailing_pe')
         pe_label='Fwd P/E' if r.get('forward_pe') and r.get('forward_pe')>0 else 'P/E'
         dy=r.get('dividend_yield')
-        if dy is not None and abs(dy)<=1: dy*=100
         out[sym]={
-            'type':'equity','pe':pe,'pe_label':pe_label,'pb':r.get('price_to_book'),
-            'ps':r.get('price_to_sales'),'yield':dy,
+            'type':'equity','pe':pe,'pe_label':pe_label,'earnings_yield':(100/pe if pe else None),
+            'yield':dy,
             'source':'public ETF quote metrics','stale':bool(r.get('stale'))
         }
     return out
@@ -1714,7 +1713,7 @@ def choose_valuation(symbol, raw):
         'revenue_growth':raw.get('revenue_growth'),'earnings_growth':raw.get('earnings_growth'),
         'gross_margin':raw.get('gross_margin'),'operating_margin':raw.get('operating_margin'),
         'profit_margin':raw.get('profit_margin'),'return_on_equity':raw.get('return_on_equity'),
-        'debt_to_equity':raw.get('debt_to_equity'),'fcf_yield':raw.get('fcf_yield'),
+        'debt_to_equity':raw.get('debt_to_equity'),'fcf_yield':(raw.get('fcf_yield') if raw.get('currency')=='USD' else None),
         'fcf_margin':raw.get('fcf_margin'),'eps_revision_30d':raw.get('eps_revision_30d'),
         'target_mean_price':raw.get('target_mean_price'),'target_upside':raw.get('target_upside'),
         'recommendation':raw.get('recommendation'),
