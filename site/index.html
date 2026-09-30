@@ -547,7 +547,7 @@ function heatH(x,h='1d'){
  const level=a>=lim[2]?3:a>=lim[1]?2:a>=lim[0]?1:0;
  return level?(Number(x)>0?'heatp':'heatn')+level:'';
 }
-function returnCell(v,h,d=2){return '<td class="'+cls(v)+' '+heatH(v,h)+'">'+pct(v,d)+'</td>'}
+function returnCell(v,h,d=2){const txt=(v===null||v===undefined)?'N/A':pct(v,d);return '<td class="'+cls(v)+' '+heatH(v,h)+'">'+txt+'</td>'}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 const ASSET_SYMBOLS={spx:'^GSPC',nasdaq:'^IXIC',russell:'^RUT',sox:'^SOX',es:'ES=F',nq:'NQ=F',vix:'^VIX',stoxx50:'^STOXX50E',ftse:'^FTSE',nikkei:'^N225',kospi:'^KS11',hsi:'^HSI',csi300:'000300.SS',eem:'EEM',dxy:'DX-Y.NYB',usdjpy:'JPY=X',eurusd:'EURUSD=X',usdcnh:'CNH=X',brent:'BZ=F',wti:'CL=F',gold:'GC=F',copper:'HG=F',btc:'BTC-USD'};
 const ASSET_LENS_PROXY={spx:'SPY',nasdaq:'QQQ',russell:'IWM',sox:'SOXX',es:'SPY',nq:'QQQ',stoxx50:'FEZ',ftse:'EWU',nikkei:'EWJ',kospi:'EWY',hsi:'EWH',csi300:'ASHR',eem:'EEM'};
@@ -600,6 +600,12 @@ function detailRow(label,value,opt={}){
 function fmtMultiple(v){return v===null||v===undefined?'—':n(v,1)+'×'}
 function fmtPct1(v){return v===null||v===undefined?'—':pct(v,1)}
 function fmtPct0(v){return v===null||v===undefined?'—':pct(v,0)}
+function stockHorizon(row,key){
+ const v=row?.[key];
+ if(v!==null&&v!==undefined)return pct(v);
+ if(row?.history_start)return 'N/A · history from '+esc(row.history_start);
+ return 'N/A';
+}
 function findStock(sym){
  const d=window.DATA||{};
  return [...(d.core_tape||[]),...(d.broad_movers||[])].find(x=>x.symbol===sym)||null;
@@ -631,11 +637,11 @@ function stockDetailHTML(sym){
  const market=[
   ['1D',pct(row?.move),row?.move],
   ['1W',pct(row?.['1w']),row?.['1w']],
-  ['1M',pct(row?.['1m']),row?.['1m']],
-  ['6M',pct(row?.['6m']),row?.['6m']],
-  ['1Y',pct(row?.['1y']),row?.['1y']],
-  ['3Y',pct(row?.['3y']),row?.['3y']],
-  ['5Y',pct(row?.['5y']),row?.['5y']],
+  ['1M',stockHorizon(row,'1m'),row?.['1m']],
+  ['6M',stockHorizon(row,'6m'),row?.['6m']],
+  ['1Y',stockHorizon(row,'1y'),row?.['1y']],
+  ['3Y',stockHorizon(row,'3y'),row?.['3y']],
+  ['5Y',stockHorizon(row,'5y'),row?.['5y']],
   ['Relative · 1D',pct(row?.relative),row?.relative],
   ['Consensus target upside',fmtPct1(v.target_upside),v.target_upside],
   ['Dividend yield',v.dividend_yield!==null&&v.dividend_yield!==undefined?n(v.dividend_yield,2)+'%':'Not available']
