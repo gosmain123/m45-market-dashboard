@@ -334,6 +334,30 @@ body{font-size:13.25px;line-height:1.38;letter-spacing:0;background:#eef1f4;colo
  .regime,.takeaways{grid-template-columns:1fr}
  .calMetricHead,.calMetric{grid-template-columns:minmax(145px,1.4fr) repeat(3,minmax(66px,.6fr))}
 }
+
+/* Compact tabbed core-equity watchlist */
+.coreToolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;padding:0 1px}
+.coreTabs{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.coreTab{appearance:none;border:1px solid #d0d7de;background:#f6f8fa;color:#586675;padding:6px 9px;border-radius:2px;font:700 9.5px/1.1 "Aptos","Segoe UI",sans-serif;cursor:pointer}
+.coreTab:hover{background:#eef2f5;color:#24394e}
+.coreTab.active{background:#17334d;border-color:#17334d;color:#fff}
+.coreTab span{display:inline-block;margin-left:6px;min-width:16px;padding:1px 4px;border-radius:8px;background:rgba(107,121,135,.13);font-size:8px;text-align:center}
+.coreTab.active span{background:rgba(255,255,255,.16);color:#fff}
+.coreMeta{font-size:9px;color:#7a8591;white-space:nowrap}
+.compactCore{min-width:900px!important}
+.compactCore td{padding-top:6px;padding-bottom:6px}
+.compactCore .coreName{width:190px}
+.compactCore th:nth-child(1){width:28%}
+.compactCore th:nth-child(2),.compactCore th:nth-child(3),.compactCore th:nth-child(4){width:10%}
+.compactCore th:nth-child(5){width:19%}
+.compactCore th:nth-child(6){width:23%}
+.coreSleeve{color:#84909d;font-size:8.2px}
+#moversSec .selectionDetails{margin-top:7px}
+@media(max-width:760px){
+ .coreToolbar{align-items:flex-start;flex-direction:column}
+ .coreMeta{padding-left:2px}
+ .coreTabs{width:100%}.coreTab{flex:1 1 auto}
+}
 </style>
 </head>
 <body>
@@ -386,10 +410,14 @@ body{font-size:13.25px;line-height:1.38;letter-spacing:0;background:#eef1f4;colo
 </div>
 
 <section class="section" id="moversSec">
-  <div class="sh"><div class="st">CORE EQUITY COVERAGE</div><div class="sn">Always-on watchlist · valuation, revisions and relative performance</div></div>
+  <div class="sh"><div class="st">CORE EQUITY COVERAGE</div><div class="sn">Tabbed watchlist · open only the sleeve you need</div></div>
   <div class="body">
+    <div class="coreToolbar">
+      <div class="coreTabs" id="coreTabs"></div>
+      <div class="coreMeta" id="coreMeta"></div>
+    </div>
     <div class="coreCoverageWrap" id="coreCoverage"></div>
-    <details class="selectionDetails"><summary>Methodology & selection logic</summary><div class="method">Core names remain visible every day. A material flag is triggered by |1D| ≥ 1.5%, |1D vs benchmark| ≥ 1.0%, or |1W| ≥ 4.0%; only material names receive a catalyst sub-row when a supported headline exists.<br><br><b>Valuation:</b> Forward P/E is the default where forecast EPS is meaningful. Banks use P/B. REITs use P/B* as a free-data screening proxy because consistent forward P/AFFO is unavailable. Loss-making companies fall back to EV/Sales where appropriate. The valuation cell is the single detail trigger: hover the ⓘ marker for the structured detail table; click to pin it.</div></details>
+    <details class="selectionDetails"><summary>Methodology & selection logic</summary><div class="method">The default <b>Today</b> tab shows only names with a material move. The three sleeve tabs contain the full always-on watchlist without making the page vertically long.<br><br>A material flag is triggered by |1D| ≥ 1.5%, |1D vs benchmark| ≥ 1.0%, or |1W| ≥ 4.0%. Forward P/E is the default valuation where forecast EPS is meaningful; banks use P/B, REITs use P/B* as a screening proxy, and loss-making companies can fall back to EV/Sales. The valuation cell is the single detail trigger.</div></details>
   </div>
 </section>
 <section class="section"><div class="sh"><div class="st">IMPORTANT LARGE-CAP MOVERS</div><div class="sn">Cross-sector scan beyond the core watchlist</div></div><div class="body"><div class="broadTableWrap" id="broadMovers"></div><details class="selectionDetails"><summary>Selection logic</summary><div class="method">Broad Mover Score = 65% × |1D| + 25% × |sector-relative 1D| + 10% × capped |1W|. A name enters only if |1D| ≥ 3.0% or |sector-relative 1D| ≥ 2.0%.</div></details></div></section>
@@ -692,34 +720,78 @@ function renderSectors(d){let x=d.sectors||[];document.getElementById('sectors')
 
 function renderFactors(d){let x=d.factors||[];document.getElementById('factors').innerHTML=`<table class="matrix compact"><thead><tr><th>Factor</th><th>ETF</th><th>Valuation</th><th>1D</th><th>1W</th><th>1M</th><th>1M vs S&P</th></tr></thead><tbody>${x.map(r=>`<tr><td>${qlink(r.symbol,r.name,'symbolLink')}</td><td>${qlink(r.symbol,r.symbol,'symbolLink')}</td><td>${etfLensHTML(r.lens,r.symbol)}</td><td class="${cls(r['1d'])} ${heat(r['1d'])}">${pct(r['1d'])}</td><td class="${cls(r['1w'])}">${pct(r['1w'])}</td><td class="${cls(r['1m'])}">${pct(r['1m'])}</td><td class="${cls(r.rel1m)}">${pct(r.rel1m)}</td></tr>`).join('')}</tbody></table><details class="selectionDetails"><summary>How to read factor tape</summary><div class="method">Growth vs Value shows duration / earnings leadership; Equal Weight vs S&P shows breadth; Quality / Min Vol indicate whether leadership is defensive or high-beta. ETF P/E is a portfolio-level field from the public quote source and should not be read as the same methodology as a single-stock forward P/E.</div></details>`}
 
-function coreGroupLabel(group){
- if(['Semis','Memory','Semi Equip'].includes(group))return 'AI Compute / Memory / Equipment';
- if(['Hyperscaler','Cloud / AI','AI Software','Data / AI','SaaS'].includes(group))return 'Hyperscalers / AI Platforms / Software';
- if(['Data Center','Neocloud','Power / Cooling','Electrical','Grid / Power','Power'].includes(group))return 'Data Center / Power / Grid';
- return group||'Other';
+const CORE_GROUPS=[
+ ['today','Today'],
+ ['compute','Compute / Memory'],
+ ['platforms','Platforms / Software'],
+ ['infra','Data Center / Power']
+];
+let CORE_ROWS=[],CORE_TAB='today';
+
+function coreGroupKey(group){
+ if(['Semis','Memory','Semi Equip'].includes(group))return 'compute';
+ if(['Hyperscaler','Cloud / AI','AI Software','Data / AI','SaaS'].includes(group))return 'platforms';
+ if(['Data Center','Neocloud','Power / Cooling','Electrical','Grid / Power','Power'].includes(group))return 'infra';
+ return 'other';
 }
-function coreRow(r){
- const catalyst=r.explanation?'<tr class="catalystRow"><td colspan="7"><span>Catalyst</span> '+(r.link?'<a target="_blank" rel="noopener noreferrer" href="'+esc(r.link)+'">'+esc(r.explanation)+'</a>':esc(r.explanation))+'</td></tr>':'';
+function coreGroupLabel(group){
+ const k=coreGroupKey(group);
+ return k==='compute'?'AI Compute / Memory / Equipment':
+        k==='platforms'?'Hyperscalers / AI Platforms / Software':
+        k==='infra'?'Data Center / Power / Grid':(group||'Other');
+}
+function coreGroupShort(group){
+ const k=coreGroupKey(group);
+ return k==='compute'?'Compute / Memory':k==='platforms'?'Platforms / Software':k==='infra'?'DC / Power':group||'Other';
+}
+function coreRow(r,showGroup){
+ const catalyst=r.explanation?'<tr class="catalystRow"><td colspan="6"><span>Catalyst</span> '+(r.link?'<a target="_blank" rel="noopener noreferrer" href="'+esc(r.link)+'">'+esc(r.explanation)+'</a>':esc(r.explanation))+'</td></tr>':'';
+ const sub=esc(r.company)+(showGroup?' · <span class="coreSleeve">'+esc(coreGroupShort(r.group))+'</span>':'');
  const main='<tr>'+
-   '<td class="coreName"><div class="nm">'+(r.material?'<span class="materialDot"></span>':'')+qlink(r.symbol,r.display,'symbolLink')+'</div><div class="sub">'+esc(r.company)+'</div></td>'+
+   '<td class="coreName"><div class="nm">'+(r.material?'<span class="materialDot"></span>':'')+qlink(r.symbol,r.display,'symbolLink')+'</div><div class="sub">'+sub+'</div></td>'+
    '<td class="num '+cls(r.move)+'"><b>'+pct(r.move)+'</b></td>'+
-   '<td class="num '+cls(r['1w'])+'">'+pct(r['1w'])+'</td>'+
+   '<td class="num '+cls(r["1w"])+'">'+pct(r["1w"])+'</td>'+
    '<td class="num '+cls(r.relative)+'">'+pct(r.relative)+'</td>'+
    '<td class="valn">'+valuationHTML(r.valuation,r.symbol)+'</td>'+
    '<td class="fundn">'+fundamentalHTML(r.valuation,r.symbol)+'</td>'+
-   '<td class="coreContext">'+esc(r.group||'')+'</td>'+
  '</tr>';
  return main+catalyst;
 }
-function renderCoreCoverage(rows){
- const order=['AI Compute / Memory / Equipment','Hyperscalers / AI Platforms / Software','Data Center / Power / Grid'];
- const grouped={};
- (rows||[]).forEach(function(r){const g=coreGroupLabel(r.group);(grouped[g]||(grouped[g]=[])).push(r)});
- const groups=order.filter(function(g){return grouped[g]}).concat(Object.keys(grouped).filter(function(g){return !order.includes(g)}));
- return '<table class="researchTable coreResearchTable"><thead><tr><th>Name</th><th>1D</th><th>1W</th><th>Relative</th><th>Valuation</th><th>Fundamentals</th><th>Theme</th></tr></thead><tbody>'+
- groups.map(function(g){return '<tr class="researchGroup"><td colspan="7">'+esc(g)+'</td></tr>'+grouped[g].map(coreRow).join('')}).join('')+
+function coreRowsForTab(tab){
+ if(tab==='today')return CORE_ROWS.filter(r=>r.material).sort((a,b)=>(b.score||0)-(a.score||0));
+ return CORE_ROWS.filter(r=>coreGroupKey(r.group)===tab);
+}
+function renderCoreTableForTab(tab){
+ const rows=coreRowsForTab(tab),showGroup=tab==='today';
+ if(!rows.length)return '<div class="emptyState">No core name crossed the material threshold today. Open a sleeve tab to view the full watchlist.</div>';
+ return '<table class="researchTable coreResearchTable compactCore"><thead><tr><th>Name</th><th>1D</th><th>1W</th><th>Relative</th><th>Valuation</th><th>Fundamentals</th></tr></thead><tbody>'+
+   rows.map(r=>coreRow(r,showGroup)).join('')+
  '</tbody></table>';
 }
+function setCoreTab(tab){
+ CORE_TAB=tab;
+ document.querySelectorAll('.coreTab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+ document.getElementById('coreCoverage').innerHTML=renderCoreTableForTab(tab);
+ const rows=coreRowsForTab(tab),materials=rows.filter(r=>r.material).length;
+ document.getElementById('coreMeta').textContent=rows.length+' names'+(tab!=='today'?' · '+materials+' material':'');
+}
+function renderCoreCoverage(rows){
+ CORE_ROWS=rows||[];
+ const counts={
+  today:CORE_ROWS.filter(r=>r.material).length,
+  compute:CORE_ROWS.filter(r=>coreGroupKey(r.group)==='compute').length,
+  platforms:CORE_ROWS.filter(r=>coreGroupKey(r.group)==='platforms').length,
+  infra:CORE_ROWS.filter(r=>coreGroupKey(r.group)==='infra').length
+ };
+ const defaultTab=counts.today>0?'today':'compute';
+ CORE_TAB=defaultTab;
+ document.getElementById('coreTabs').innerHTML=CORE_GROUPS.map(([k,label])=>'<button class="coreTab '+(k===defaultTab?'active':'')+'" data-tab="'+k+'" type="button">'+esc(label)+'<span>'+counts[k]+'</span></button>').join('');
+ document.getElementById('coreTabs').querySelectorAll('.coreTab').forEach(b=>b.addEventListener('click',()=>setCoreTab(b.dataset.tab)));
+ document.getElementById('coreCoverage').innerHTML=renderCoreTableForTab(defaultTab);
+ const rows0=coreRowsForTab(defaultTab),m0=rows0.filter(r=>r.material).length;
+ document.getElementById('coreMeta').textContent=rows0.length+' names'+(defaultTab!=='today'?' · '+m0+' material':'');
+}
+
 function renderBroadTable(rows){
  if(!rows||!rows.length)return '<div class="emptyState">No broader large-cap name crossed the material-move threshold.</div>';
  return '<table class="researchTable broadResearchTable"><thead><tr><th>Name</th><th>Sector</th><th>1D</th><th>vs Sector</th><th>Valuation</th><th>Fundamentals</th><th>Catalyst</th></tr></thead><tbody>'+
@@ -734,7 +806,7 @@ function renderBroadTable(rows){
  '</tr>'}).join('')+'</tbody></table>';
 }
 function renderMovers(d){
- document.getElementById('coreCoverage').innerHTML=renderCoreCoverage(d.core_tape||[]);
+ renderCoreCoverage(d.core_tape||[]);
  document.getElementById('broadMovers').innerHTML=renderBroadTable(d.broad_movers||[]);
 }
 function renderSignals(d){
