@@ -43,6 +43,51 @@ jobs:
       - name: Run calculation tests
         run: pytest -q
 
+      - name: Validate dashboard JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('site/index.html').read_text(encoding='utf-8')
+          m=re.search(r'<script>(.*)</script>',html,re.S)
+          if not m:
+              raise SystemExit('script tag not found')
+          Path('/tmp/dashboard.js').write_text(m.group(1),encoding='utf-8')
+          PY
+          node --check /tmp/dashboard.js
+
+      - name: Run dashboard critical-data QA
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('site/data/dashboard.json').read_text())
+          missing=[]
+          checks=[
+            ('S&P 500', d.get('market',{}).get('spx',{}).get('price')),
+            ('Nasdaq', d.get('market',{}).get('nasdaq',{}).get('price')),
+            ('SOX', d.get('market',{}).get('sox',{}).get('price')),
+            ('DXY', d.get('market',{}).get('dxy',{}).get('price')),
+            ('Brent', d.get('market',{}).get('brent',{}).get('price')),
+            ('Gold', d.get('market',{}).get('gold',{}).get('price')),
+            ('2Y Treasury', d.get('curve',{}).get('2Y',{}).get('yield')),
+            ('10Y Treasury', d.get('curve',{}).get('10Y',{}).get('yield')),
+            ('30Y Treasury', d.get('curve',{}).get('30Y',{}).get('yield')),
+            ('10Y real yield', d.get('fred',{}).get('real10',{}).get('value')),
+            ('ACM term premium', d.get('acm',{}).get('tp10')),
+            ('Treasury CVOL', d.get('cvol',{}).get('value')),
+            ('FedWatch', bool(d.get('fedwatch',{}).get('probabilities'))),
+            ('HY vs IG proxy', d.get('credit_proxy',{}).get('hy_vs_ig',{}).get('1d')),
+            ('Macro calendar', len(d.get('calendar',[]))>0),
+          ]
+          for name,val in checks:
+              if val is None or val is False:
+                  missing.append(name)
+          if missing:
+              raise SystemExit('Critical dashboard fields missing: '+', '.join(missing))
+          print('Critical dashboard QA passed')
+          PY
+
       - name: Commit refreshed snapshot
         run: |
           git config user.name "market-dashboard-bot"
