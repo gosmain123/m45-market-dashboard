@@ -1402,6 +1402,35 @@ def yahoo_valuation_pack(symbols):
                 }
     except Exception:
         pass
+
+    # Per-symbol quoteSummary fallback only where all basic multiples are missing.
+    try:
+        missing=[sym for sym in symbols if sym not in out or not any(out[sym].get(k) for k in ('forward_pe','trailing_pe','price_to_book'))]
+        for sym in missing:
+            try:
+                r=s.get('https://query2.finance.yahoo.com/v10/finance/quoteSummary/'+quote(sym,safe='.-'),
+                        params={'modules':'defaultKeyStatistics,summaryDetail','crumb':crumb},
+                        headers=headers,timeout=10)
+                r.raise_for_status()
+                z=(((r.json() or {}).get('quoteSummary') or {}).get('result') or [{}])[0]
+                ds=z.get('defaultKeyStatistics') or {}; sd=z.get('summaryDetail') or {}
+                def rawv(x):
+                    return fnum((x or {}).get('raw')) if isinstance(x,dict) else fnum(x)
+                q={
+                    'forward_pe':rawv(sd.get('forwardPE')) or rawv(ds.get('forwardPE')),
+                    'trailing_pe':rawv(sd.get('trailingPE')) or rawv(ds.get('trailingPE')),
+                    'price_to_book':rawv(ds.get('priceToBook')),
+                    'eps_forward':rawv(ds.get('forwardEps')),
+                    'market_cap':rawv(sd.get('marketCap')),
+                    'currency':None,'source':'Yahoo Finance quoteSummary'
+                }
+                if any(q.get(k) for k in ('forward_pe','trailing_pe','price_to_book')):
+                    out[sym]=q
+            except Exception:
+                pass
+    except Exception:
+        pass
+
     # Last-good continuity if the quote endpoint is temporarily unavailable.
     for sym in symbols:
         if sym not in out and sym in prevmap:
@@ -1425,12 +1454,9 @@ def choose_valuation(symbol, raw):
     elif tpe and tpe>0 and tpe<1000:
         metric='TTM P/E'; value=tpe
         note='Forward P/E was unavailable or not meaningful, so trailing P/E is shown.'
-    elif pb and pb>0 and pb<1000:
-        metric='P/B'; value=pb
-        note='Earnings multiple was unavailable or not meaningful; price-to-book is shown as a fallback screening multiple.'
     else:
         metric='N/M'; value=None
-        note='No reliable positive earnings/book multiple was available from the free quote feed.'
+        note='No reliable positive earnings multiple was available. A generic P/B fallback is intentionally not used outside banks / REIT screening because it can be economically misleading.'
     return {
         'metric':metric,'value':value,'note':note,
         'forward_pe':fpe,'trailing_pe':tpe,'price_to_book':pb,
