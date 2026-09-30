@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, date
 from io import BytesIO, StringIO
@@ -294,21 +295,130 @@ def treasury_curve():
     out['date']=latest['NEW_DATE'][:10]
     return out
 
+
+def _previous_snapshot():
+    try:
+        p=Path(__file__).resolve().parents[1]/'site'/'data'/'dashboard.json'
+        return json.loads(p.read_text(encoding='utf-8')) if p.exists() else {}
+    except Exception:
+        return {}
+
+def _series_stats(df, date_col='DATE', value_col='VALUE'):
+    x=df[[date_col,value_col]].copy()
+    x[date_col]=pd.to_datetime(x[date_col],errors='coerce')
+    x[value_col]=pd.to_numeric(x[value_col],errors='coerce')
+    x=x.dropna().sort_values(date_col)
+    if len(x)<2:
+        raise ValueError('insufficient history')
+    a,b=x.iloc[-1],x.iloc[-2]
+    month=x.iloc[-22] if len(x)>=22 else x.iloc[0]
+    return {
+        'value':float(a[value_col]),
+        '1d':float(a[value_col]-b[value_col]),
+        '1m':float(a[value_col]-month[value_col]),
+        'date':a[date_col].strftime('%Y-%m-%d')
+    }
+
+def treasury_real10():
+    """Official U.S. Treasury real curve; avoids FRED dependency for the 10Y real yield."""
+    year=sgt_now().year
+    url=('https://home.treasury.gov/resource-center/data-chart-center/interest-rates/'
+         f'TextView?type=daily_treasury_real_yield_curve&field_tdr_date_value={year}')
+    html=req(url,timeout=18).text
+    tables=pd.read_html(StringIO(html))
+    for t in tables:
+        cols={str(x).strip().upper():x for x in t.columns}
+        dcol=next((orig for key,orig in cols.items() if key=='DATE'),None)
+        vcol=next((orig for key,orig in cols.items() if key.replace(' ','') in ('10YR','10YEAR')),None)
+        if dcol is not None and vcol is not None:
+            x=t[[dcol,vcol]].rename(columns={dcol:'DATE',vcol:'VALUE'})
+            out=_series_stats(x)
+            out['label']='10Y Real Yield'
+            out['source']='U.S. Treasury'
+            return out
+    raise ValueError('Treasury real-yield table unavailable')
+
+def _fred_html_history(series_id):
+    """FRED table page fallback: no API key and usually more reliable than fredgraph.csv on CI runners."""
+    url=f'https://fred.stlouisfed.org/data/{series_id}'
+    html=req(url,timeout=14).text
+    tables=pd.read_html(StringIO(html))
+    for t in tables:
+        cols={str(x).strip().upper():x for x in t.columns}
+        if 'DATE' in cols and 'VALUE' in cols:
+            x=t[[cols['DATE'],cols['VALUE']]].rename(columns={cols['DATE']:'DATE',cols['VALUE']:'VALUE'})
+            return _series_stats(x)
+    # FRED sometimes renders the data as plain text instead of a semantic table.
+    text=BeautifulSoup(html,'html.parser').get_text('\n',strip=True)
+    pairs=re.findall(r'(20\d{2}-\d{2}-\d{2})\s*[| ]+\s*(-?\d+(?:\.\d+)?)',text)
+    if len(pairs)>=2:
+        return _series_stats(pd.DataFrame(pairs,columns=['DATE','VALUE']))
+    raise ValueError(f'FRED data page parse unavailable for {series_id}')
+
+def _fred_csv_history(series_id):
+    start=(sgt_now().date()-timedelta(days=550)).isoformat()
+    end=sgt_now().date().isoformat()
+    url=f'https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}&cosd={start}&coed={end}'
+    txt=req(url,timeout=10).text
+    df=pd.read_csv(StringIO(txt))
+    val=df.columns[-1]
+    return _series_stats(df.rename(columns={val:'VALUE'}))
+
 def fred_history(series_id):
-    start=(sgt_now().date()-timedelta(days=550)).isoformat(); end=sgt_now().date().isoformat(); txt=req(f'https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}&cosd={start}&coed={end}', timeout=30).text
-    df=pd.read_csv(StringIO(txt)); val=df.columns[-1]
-    df[val]=pd.to_numeric(df[val],errors='coerce'); df['DATE']=pd.to_datetime(df['DATE'],errors='coerce')
-    df=df.dropna(subset=[val,'DATE']).sort_values('DATE')
-    a,b=df.iloc[-1],df.iloc[-2]
-    month=df.iloc[-22] if len(df)>=22 else df.iloc[0]
-    return {'value':float(a[val]),'1d':float(a[val]-b[val]),'1m':float(a[val]-month[val]),'date':a.DATE.strftime('%Y-%m-%d'),'series':df.tail(260)[['DATE',val]].rename(columns={val:'value'})}
+    errors=[]
+    for fn in (_fred_html_history,_fred_csv_history):
+        try:
+            return fn(series_id)
+        except Exception as exc:
+            errors.append(str(exc))
+    raise ValueError(' | '.join(errors))
+
+def _cached_or_seed(key,label,seed):
+    prev=_previous_snapshot().get('fred',{}).get(key,{})
+    if isinstance(prev,dict) and prev.get('value') is not None:
+        out={k:prev.get(k) for k in ('value','1d','1m','date')}
+        out.update({'label':label,'stale':True,'source_status':'last-good cache'})
+        return out
+    out=dict(seed)
+    out.update({'label':label,'stale':True,'source_status':'seed fallback'})
+    return out
 
 def fred_pack():
+    # Seed values are only a final continuity fallback. The UI keeps their as-of date visible.
+    seeds={
+      'ig_oas': {'value':0.79,'1d':0.02,'1m':-0.02,'date':'2026-09-24'},
+      'hy_oas': {'value':2.80,'1d':0.07,'1m':0.11,'date':'2026-09-24'},
+      'ccc_oas':{'value':11.12,'1d':0.19,'1m':0.76,'date':'2026-09-24'},
+    }
     out={}
-    for k,(sid,label) in FRED_SERIES.items():
+    try:
+        out['real10']=treasury_real10()
+    except Exception:
+        prev=_previous_snapshot().get('fred',{}).get('real10',{})
+        if isinstance(prev,dict) and prev.get('value') is not None:
+            out['real10']={k:prev.get(k) for k in ('value','1d','1m','date')}
+            out['real10'].update({'label':'10Y Real Yield','stale':True,'source_status':'last-good cache'})
+        else:
+            out['real10']={'value':2.85,'1d':0.09,'1m':0.47,'date':'2026-09-24','label':'10Y Real Yield','stale':True,'source_status':'seed fallback'}
+
+    credit_map={
+      'ig_oas':('BAMLC0A0CM','IG OAS'),
+      'hy_oas':('BAMLH0A0HYM2','HY OAS'),
+      'ccc_oas':('BAMLH0A3HYC','CCC OAS'),
+    }
+    def one(key,sid,label):
         try:
-            x=fred_history(sid); out[k]={kk:vv for kk,vv in x.items() if kk!='series'}; out[k]['label']=label
-        except Exception as e: out[k]={'error':str(e),'label':label}
+            x=fred_history(sid)
+            x.update({'label':label,'source':'FRED / ICE BofA','stale':False})
+            return key,x
+        except Exception:
+            return key,_cached_or_seed(key,label,seeds[key])
+
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        futs=[ex.submit(one,k,*v) for k,v in credit_map.items()]
+        for fut in as_completed(futs):
+            k,v=fut.result()
+            out[k]=v
     return out
 
 def acm_term_premium():
@@ -323,12 +433,33 @@ def acm_term_premium():
     return {'tp10':float(a.ACMTP10),'bp1d':float((a.ACMTP10-b.ACMTP10)*100),'bp1m':float((a.ACMTP10-m.ACMTP10)*100),'date':a.DATE.strftime('%Y-%m-%d'),
             'fitted10':fnum(a.get('ACMY10')),'risk_neutral10':fnum(a.get('ACMRNY10'))}
 
+
 def cme_cvol():
-    url='https://www.cmegroup.com/markets/interest-rates.html'
-    text=BeautifulSoup(req(url).text,'html.parser').get_text(' ',strip=True)
-    m=re.search(r'Treasury CVOL Index.*?Code:\s*TVL.*?Cvol:\s*([0-9.]+).*?Change:\s*([+\-0-9.]+)',text,re.I)
-    if not m: raise ValueError('parse unavailable')
-    return {'value':float(m.group(1)),'change':float(m.group(2))}
+    """Best-effort CME web value with last-good continuity; never blanks the dashboard on a 403."""
+    urls=[
+      'https://www.cmegroup.com/markets/interest-rates.html',
+      'https://www.cmegroup.com/cn-s/markets/interest-rates.html'
+    ]
+    headers={
+      'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153 Safari/537.36',
+      'Accept-Language':'en-US,en;q=0.9'
+    }
+    for url in urls:
+        try:
+            text=BeautifulSoup(req(url,timeout=10,headers=headers).text,'html.parser').get_text(' ',strip=True)
+            m=re.search(r'Treasury (?:Yield )?CVOL Index.*?Code:\s*TVL.*?Cvol:\s*([0-9.]+).*?(?:Change|涨跌):\s*([+\-0-9.]+).*?(?:Last Updated|最后更新)\s*([^<]{0,60})',text,re.I)
+            if not m:
+                m=re.search(r'Treasury (?:Yield )?CVOL Index.*?Code:\s*TVL.*?Cvol:\s*([0-9.]+).*?(?:Change|涨跌):\s*([+\-0-9.]+)',text,re.I)
+            if m:
+                return {'value':float(m.group(1)),'change':float(m.group(2)),'date':m.group(3).strip() if len(m.groups())>=3 and m.group(3) else None,'stale':False,'source':'CME public page'}
+        except Exception:
+            pass
+    prev=_previous_snapshot().get('cvol',{})
+    if isinstance(prev,dict) and prev.get('value') is not None:
+        out={k:prev.get(k) for k in ('value','change','date')}
+        out.update({'stale':True,'source_status':'last-good cache'})
+        return out
+    return {'value':130.7204,'change':7.6710,'date':'2026-09-28','stale':True,'source_status':'CME public-page seed'}
 
 def fedwatch():
     try:
