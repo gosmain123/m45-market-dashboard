@@ -1356,10 +1356,94 @@ def mover_score(m, relative):
     one=abs(m.get('1d') or 0.0); rel=abs(relative or 0.0); week=min(abs(m.get('1w') or 0.0),8.0)
     return 0.65*one + 0.25*rel + 0.10*week
 
+
+BANK_VALUATION_SYMBOLS={'JPM','BAC','GS','MS'}
+REIT_VALUATION_SYMBOLS={'EQIX','DLR','PLD','AMT'}
+
+def yahoo_valuation_pack(symbols):
+    """Best-effort Yahoo quote fundamentals. Uses a browser cookie + crumb because /v7/finance/quote requires auth."""
+    symbols=sorted(set(symbols))
+    prev=_previous_snapshot()
+    prevmap={}
+    for r in (prev.get('core_tape') or [])+(prev.get('broad_movers') or []):
+        if r.get('symbol') and r.get('valuation'):
+            prevmap[r['symbol']]=r['valuation']
+    headers={
+        'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153 Safari/537.36',
+        'Accept-Language':'en-US,en;q=0.9'
+    }
+    out={}
+    try:
+        s=requests.Session()
+        try:
+            s.get('https://fc.yahoo.com',headers=headers,timeout=8)
+        except Exception:
+            pass
+        crumb=s.get('https://query1.finance.yahoo.com/v1/test/getcrumb',headers=headers,timeout=10).text.strip()
+        if not crumb or len(crumb)>100:
+            raise ValueError('Yahoo crumb unavailable')
+        for i in range(0,len(symbols),35):
+            batch=symbols[i:i+35]
+            r=s.get('https://query1.finance.yahoo.com/v7/finance/quote',
+                    params={'symbols':','.join(batch),'crumb':crumb},
+                    headers=headers,timeout=15)
+            r.raise_for_status()
+            for q in (((r.json() or {}).get('quoteResponse') or {}).get('result') or []):
+                sym=q.get('symbol')
+                if not sym: continue
+                out[sym]={
+                    'forward_pe':fnum(q.get('forwardPE')),
+                    'trailing_pe':fnum(q.get('trailingPE')),
+                    'price_to_book':fnum(q.get('priceToBook')),
+                    'eps_forward':fnum(q.get('epsForward')),
+                    'market_cap':fnum(q.get('marketCap')),
+                    'currency':q.get('financialCurrency') or q.get('currency'),
+                    'source':'Yahoo Finance quote'
+                }
+    except Exception:
+        pass
+    # Last-good continuity if the quote endpoint is temporarily unavailable.
+    for sym in symbols:
+        if sym not in out and sym in prevmap:
+            z=dict(prevmap[sym]); z['stale']=True; z['source_status']='last-good cache'
+            out[sym]=z
+    return out
+
+def choose_valuation(symbol, raw):
+    raw=raw or {}
+    fpe=raw.get('forward_pe'); tpe=raw.get('trailing_pe'); pb=raw.get('price_to_book')
+    metric=None; value=None; note=''
+    if symbol in BANK_VALUATION_SYMBOLS and pb and pb>0:
+        metric='P/B'; value=pb
+        note='Bank valuation: price-to-book is used because balance-sheet equity is more decision-useful than an enterprise multiple.'
+    elif symbol in REIT_VALUATION_SYMBOLS and pb and pb>0:
+        metric='P/B*'; value=pb
+        note='REIT public-data proxy. P/AFFO is preferable for REIT underwriting, but a consistent forward AFFO feed is not available in the free source; P/B is shown as a screening proxy only.'
+    elif fpe and fpe>0 and fpe<1000:
+        metric='Fwd P/E'; value=fpe
+        note='Forward P/E uses forecast EPS from the quote feed.'
+    elif tpe and tpe>0 and tpe<1000:
+        metric='TTM P/E'; value=tpe
+        note='Forward P/E was unavailable or not meaningful, so trailing P/E is shown.'
+    elif pb and pb>0 and pb<1000:
+        metric='P/B'; value=pb
+        note='Earnings multiple was unavailable or not meaningful; price-to-book is shown as a fallback screening multiple.'
+    else:
+        metric='N/M'; value=None
+        note='No reliable positive earnings/book multiple was available from the free quote feed.'
+    return {
+        'metric':metric,'value':value,'note':note,
+        'forward_pe':fpe,'trailing_pe':tpe,'price_to_book':pb,
+        'market_cap':raw.get('market_cap'),'currency':raw.get('currency'),
+        'source':raw.get('source') or raw.get('source_status') or 'public quote feed',
+        'stale':bool(raw.get('stale'))
+    }
+
 def stock_monitor_pack():
     core_benches=set(v[2] for v in WATCHLIST.values())
     broad_benches=set(v[2] for v in BROAD_WATCHLIST.values())
     hist=load_symbol_set(set(WATCHLIST)|set(BROAD_WATCHLIST)|core_benches|broad_benches)
+    valuations=yahoo_valuation_pack(set(WATCHLIST)|set(BROAD_WATCHLIST))
     core=[]; material=[]
     for sym,(company,group,bench) in WATCHLIST.items():
         m=hist.get(sym); b=hist.get(bench)
@@ -1375,7 +1459,7 @@ def stock_monitor_pack():
                 if category!='Company / sector news':
                     expl=f'{category}: {news[0]["title"]}'
                     link=news[0]['link']; conf='Headline-linked'
-        row={'symbol':sym,'display':sym.replace('.KS',''),'company':company,'group':group,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'relative':rel,'score':score,'material':flag,'explanation':expl,'link':link,'confidence':conf,'quality_issue':m.get('quality_issue')}
+        row={'symbol':sym,'display':sym.replace('.KS',''),'company':company,'group':group,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'relative':rel,'score':score,'material':flag,'explanation':expl,'link':link,'confidence':conf,'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,valuations.get(sym))}
         core.append(row)
         if flag: material.append(row)
     rank={g:i for i,g in enumerate(CORE_GROUP_ORDER)}
@@ -1387,7 +1471,7 @@ def stock_monitor_pack():
         if not m or m.get('1d') is None: continue
         rel=m['1d']-(b.get('1d') or 0) if b else None
         if abs(m['1d'])<3.0 and abs(rel or 0)<2.0: continue
-        broad_rows.append({'symbol':sym,'display':sym,'company':company,'sector':sector,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'relative':rel,'score':mover_score(m,rel),'quality_issue':m.get('quality_issue')})
+        broad_rows.append({'symbol':sym,'display':sym,'company':company,'sector':sector,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'relative':rel,'score':mover_score(m,rel),'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,valuations.get(sym))})
     broad_rows.sort(key=lambda r:-r['score']); broad_rows=broad_rows[:10]
     for r in broad_rows:
         r['explanation']=''; r['link']=''; r['confidence']='Monitor'
