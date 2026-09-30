@@ -144,6 +144,11 @@ body{background:var(--bg);color:var(--ink);font-family:"Aptos","Segoe UI",-apple
 .details summary,.selectionDetails summary{font-weight:650}.footer{color:#7b8490}
 .materialDot{width:4px;height:4px;background:#8f6b2d}
 @media(max-width:1200px){.marketMoverCard{grid-template-columns:100px 65px 70px 1fr}.coretable .why{max-width:210px}}
+
+.valsecond{font-size:7.8px;color:#7b8591;margin-top:2px}.fundwrap{cursor:help;min-width:68px}.fundmain{font-size:9.7px;font-weight:750;color:#344152}.fundsub{font-size:7.9px;color:#7b8591;margin-top:2px}
+.etflens{display:block;text-decoration:none;cursor:help;white-space:nowrap}.etfmain{font-size:9.5px;font-weight:760;color:#334153}.etfsub{font-size:7.8px;color:#7e8894;margin-top:1px}.etflens:hover .etfmain{text-decoration:underline}
+.catalystRow td{padding:4px 7px 6px!important;background:#fbfcfd;color:#596575!important;font-size:9px!important;line-height:1.3;text-align:left!important;white-space:normal!important}.catalystRow span{font-size:7.8px;text-transform:uppercase;letter-spacing:.04em;color:#8a6c37;font-weight:800;margin-right:5px}
+.coretable .fundn{text-align:right;white-space:nowrap}.marketMoverCard{grid-template-columns:105px 68px 72px 82px 1fr}.moverFund{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -204,7 +209,7 @@ body{background:var(--bg);color:var(--ink);font-family:"Aptos","Segoe UI",-apple
 <div id="allocation">
 <section class="section">
   <div class="sh"><div class="st">SYSTEMATIC TACTICAL ALLOCATION</div><div class="sn">Daily OW / Neutral / UW signal · 1–6M horizon</div></div>
-  <div class="body"><table class="matrix compact"><thead><tr><th>Asset class</th><th>View</th><th>Score</th><th>1M</th><th>3M</th><th>6M</th><th>60D vol</th><th style="text-align:left">Main signal</th></tr></thead><tbody id="signals"></tbody></table><div class="details"><summary>Signal methodology</summary><div class="method">50% multi-horizon risk-adjusted trend (1M/3M/6M = 50/30/20), 25% relative strength versus a relevant benchmark, and 25% cross-asset regime alignment. Score ≥ +25 = Overweight; ≤ −25 = Underweight; otherwise Neutral. It is deliberately slow-moving enough for a tactical view while still updating every day.</div></div></div>
+  <div class="body"><table class="matrix compact"><thead><tr><th>Asset class</th><th>View</th><th>Valuation / Carry</th><th>Score</th><th>1M</th><th>3M</th><th>6M</th><th>60D vol</th><th style="text-align:left">Main signal</th></tr></thead><tbody id="signals"></tbody></table><div class="details"><summary>Signal methodology</summary><div class="method">50% multi-horizon risk-adjusted trend (1M/3M/6M = 50/30/20), 25% relative strength versus a relevant benchmark, and 25% cross-asset regime alignment. Score ≥ +25 = Overweight; ≤ −25 = Underweight; otherwise Neutral.<br><br><b>Asset lens:</b> equity ETFs show portfolio P/E / earnings yield / dividend yield where available; fixed-income ETFs show issuer YTM / duration / SEC yield / OAS; real-asset ETFs are not given an earnings multiple.</div></div></div>
 </section>
 </div>
 
@@ -258,15 +263,77 @@ function valuationTitle(v){
  if(v.note)p.push(v.note);
  if(v.forward_pe)p.push('Forward P/E '+n(v.forward_pe,1)+'x');
  if(v.trailing_pe)p.push('TTM P/E '+n(v.trailing_pe,1)+'x');
+ if(v.enterprise_to_ebitda)p.push('EV/EBITDA '+n(v.enterprise_to_ebitda,1)+'x');
+ if(v.enterprise_to_revenue)p.push('EV/Sales '+n(v.enterprise_to_revenue,1)+'x');
+ if(v.price_to_sales)p.push('P/S '+n(v.price_to_sales,1)+'x');
  if(v.price_to_book)p.push('P/B '+n(v.price_to_book,1)+'x');
- if(v.stale)p.push('Using last-good cached valuation');
+ if(v.peg_ratio)p.push('PEG '+n(v.peg_ratio,2)+'x');
+ if(v.dividend_yield!==null&&v.dividend_yield!==undefined)p.push('Dividend yield '+n(v.dividend_yield,2)+'%');
+ if(v.stale)p.push('Using last-good cached fundamentals');
  return esc(p.join(' · '));
 }
 function valuationHTML(v){
  v=v||{}; const label=v.metric||'N/M';
  const value=(v.value!==null&&v.value!==undefined)?n(v.value,1)+'×':'N/M';
- return '<div class="valwrap" title="'+valuationTitle(v)+'"><div class="valmain">'+value+'</div><div class="valmetric">'+esc(label)+(v.stale?' · cached':'')+'</div></div>';
+ const secondary=(v.secondary!==null&&v.secondary!==undefined&&v.secondary_metric)?'<div class="valsecond">'+esc(v.secondary_metric)+' '+n(v.secondary,1)+'×</div>':'';
+ return '<div class="valwrap" title="'+valuationTitle(v)+'"><div class="valmain">'+value+'</div><div class="valmetric">'+esc(label)+(v.stale?' · cached':'')+'</div>'+secondary+'</div>';
 }
+function fundamentalTitle(v){
+ v=v||{}; let p=[];
+ if(v.revenue_growth!==null&&v.revenue_growth!==undefined)p.push('Revenue growth '+pct(v.revenue_growth,1));
+ if(v.earnings_growth!==null&&v.earnings_growth!==undefined)p.push('Earnings growth '+pct(v.earnings_growth,1));
+ if(v.eps_revision_30d!==null&&v.eps_revision_30d!==undefined)p.push('FY EPS estimate revision 30D '+pct(v.eps_revision_30d,1));
+ if(v.operating_margin!==null&&v.operating_margin!==undefined)p.push('Operating margin '+n(v.operating_margin,1)+'%');
+ if(v.fcf_margin!==null&&v.fcf_margin!==undefined)p.push('FCF margin '+n(v.fcf_margin,1)+'%');
+ if(v.fcf_yield!==null&&v.fcf_yield!==undefined)p.push('FCF yield '+n(v.fcf_yield,1)+'%');
+ if(v.return_on_equity!==null&&v.return_on_equity!==undefined)p.push('ROE '+n(v.return_on_equity,1)+'%');
+ if(v.debt_to_equity!==null&&v.debt_to_equity!==undefined)p.push('Debt/equity '+n(v.debt_to_equity,1)+'%');
+ if(v.target_upside!==null&&v.target_upside!==undefined)p.push('Consensus target upside '+pct(v.target_upside,1));
+ return esc(p.join(' · '));
+}
+function fundamentalHTML(v){
+ v=v||{}; let a='—',b='';
+ if(v.return_on_equity!==null&&v.return_on_equity!==undefined&&v.metric==='P/B'){a='ROE '+n(v.return_on_equity,1)+'%'}
+ else if(v.revenue_growth!==null&&v.revenue_growth!==undefined){a='Rev '+pct(v.revenue_growth,0)}
+ if(v.eps_revision_30d!==null&&v.eps_revision_30d!==undefined){b='EPS rev '+pct(v.eps_revision_30d,1)}
+ else if(v.fcf_yield!==null&&v.fcf_yield!==undefined){b='FCF yld '+n(v.fcf_yield,1)+'%'}
+ else if(v.fcf_margin!==null&&v.fcf_margin!==undefined){b='FCF mgn '+n(v.fcf_margin,1)+'%'}
+ else if(v.operating_margin!==null&&v.operating_margin!==undefined){b='Op mgn '+n(v.operating_margin,1)+'%'}
+ return '<div class="fundwrap" title="'+fundamentalTitle(v)+'"><div class="fundmain">'+a+'</div><div class="fundsub">'+b+'</div></div>';
+}
+function etfLensTitle(l){
+ l=l||{}; let p=[];
+ if(l.type==='equity'){
+  if(l.pe)p.push((l.pe_label||'P/E')+' '+n(l.pe,1)+'x');
+  if(l.earnings_yield!==null&&l.earnings_yield!==undefined)p.push('Earnings yield '+n(l.earnings_yield,1)+'%');
+  if(l.yield!==null&&l.yield!==undefined)p.push('Dividend yield '+n(l.yield,2)+'%');
+  p.push('Portfolio valuation field from the public ETF quote source; methodology can differ from constituent-weighted NTM screens.');
+ }else if(l.type==='fixed_income'){
+  if(l.ytm!==null&&l.ytm!==undefined)p.push('YTM '+n(l.ytm,2)+'%');
+  if(l.duration!==null&&l.duration!==undefined)p.push('Effective duration '+n(l.duration,2)+'y');
+  if(l.sec_yield!==null&&l.sec_yield!==undefined)p.push('30D SEC yield '+n(l.sec_yield,2)+'%');
+  if(l.oas!==null&&l.oas!==undefined)p.push('OAS '+n(l.oas,0)+' bp');
+  p.push('Issuer portfolio characteristics.');
+ }else p.push('No earnings valuation: real-asset exposure is read through trend, volatility and macro regime.');
+ if(l.stale)p.push('Last-good cached characteristics.');
+ return esc(p.join(' · '));
+}
+function etfLensHTML(l){
+ l=l||{};
+ if(l.type==='fixed_income'){
+  const main=l.ytm!==null&&l.ytm!==undefined?'YTM '+n(l.ytm,2)+'%':'—';
+  const sub=(l.duration!==null&&l.duration!==undefined?'Dur '+n(l.duration,1)+'y':'')+(l.sec_yield!==null&&l.sec_yield!==undefined?' · SEC '+n(l.sec_yield,2)+'%':'');
+  const inside='<div class="etfmain">'+main+'</div><div class="etfsub">'+sub+'</div>';
+  return l.source_url?'<a class="etflens" title="'+etfLensTitle(l)+'" target="_blank" rel="noopener noreferrer" href="'+esc(l.source_url)+'">'+inside+'</a>':'<div class="etflens" title="'+etfLensTitle(l)+'">'+inside+'</div>';
+ }
+ if(l.type==='equity'){
+  const main=l.pe!==null&&l.pe!==undefined?(l.pe_label||'P/E')+' '+n(l.pe,1)+'×':'—';
+  const sub=(l.earnings_yield!==null&&l.earnings_yield!==undefined?'E/P '+n(l.earnings_yield,1)+'%':'')+(l.yield!==null&&l.yield!==undefined?' · Div '+n(l.yield,1)+'%':'');
+  return '<div class="etflens" title="'+etfLensTitle(l)+'"><div class="etfmain">'+main+'</div><div class="etfsub">'+sub+'</div></div>';
+ }
+ return '<div class="etflens" title="'+etfLensTitle(l)+'"><div class="etfmain">N/A</div><div class="etfsub">trend / vol</div></div>';
+}
+
 function priceFmt(key,x){if(x===null||x===undefined)return'—'; if(['brent','wti','gold','btc'].includes(key))return '$'+n(x,x>=1000?0:2); if(['eurusd','usdcnh'].includes(key))return n(x,4); if(key==='usdjpy'||key==='dxy'||key==='vix')return n(x,2); return n(x,x>=1000?0:2)}
 function scoreGauge(v){let pos=Math.max(0,Math.min(100,(v+100)/2));return `<div class="scorebar"><i style="left:${pos}%"></i></div>`}
 
@@ -343,22 +410,38 @@ function renderInternals(d){
  }).join('');
 }
 
-function renderSectors(d){let x=d.sectors||[];document.getElementById('sectors').innerHTML=`<table class="matrix compact"><thead><tr><th>Sector</th><th>ETF</th><th>1D</th><th>1W</th><th>1M</th><th>3M</th><th>1M vs S&P</th></tr></thead><tbody>${x.map(r=>`<tr><td>${qlink(r.symbol,r.name,'symbolLink')}</td><td>${qlink(r.symbol,r.symbol,'symbolLink')}</td><td class="${cls(r['1d'])} ${heat(r['1d'])}">${pct(r['1d'])}</td><td class="${cls(r['1w'])}">${pct(r['1w'])}</td><td class="${cls(r['1m'])}">${pct(r['1m'])}</td><td class="${cls(r['3m'])}">${pct(r['3m'])}</td><td class="${cls(r.rel1m)}">${pct(r.rel1m)}</td></tr>`).join('')}</tbody></table>`}
+function renderSectors(d){let x=d.sectors||[];document.getElementById('sectors').innerHTML=`<table class="matrix compact"><thead><tr><th>Sector</th><th>ETF</th><th>Valuation</th><th>1D</th><th>1W</th><th>1M</th><th>3M</th><th>1M vs S&P</th></tr></thead><tbody>${x.map(r=>`<tr><td>${qlink(r.symbol,r.name,'symbolLink')}</td><td>${qlink(r.symbol,r.symbol,'symbolLink')}</td><td>${etfLensHTML(r.lens)}</td><td class="${cls(r['1d'])} ${heat(r['1d'])}">${pct(r['1d'])}</td><td class="${cls(r['1w'])}">${pct(r['1w'])}</td><td class="${cls(r['1m'])}">${pct(r['1m'])}</td><td class="${cls(r['3m'])}">${pct(r['3m'])}</td><td class="${cls(r.rel1m)}">${pct(r.rel1m)}</td></tr>`).join('')}</tbody></table>`}
 
-function renderFactors(d){let x=d.factors||[];document.getElementById('factors').innerHTML=`<table class="matrix compact"><thead><tr><th>Factor</th><th>ETF</th><th>1D</th><th>1W</th><th>1M</th><th>1M vs S&P</th></tr></thead><tbody>${x.map(r=>`<tr><td>${qlink(r.symbol,r.name,'symbolLink')}</td><td>${qlink(r.symbol,r.symbol,'symbolLink')}</td><td class="${cls(r['1d'])} ${heat(r['1d'])}">${pct(r['1d'])}</td><td class="${cls(r['1w'])}">${pct(r['1w'])}</td><td class="${cls(r['1m'])}">${pct(r['1m'])}</td><td class="${cls(r.rel1m)}">${pct(r.rel1m)}</td></tr>`).join('')}</tbody></table><details class="selectionDetails"><summary>How to read factor tape</summary><div class="method">Growth vs Value shows duration / earnings leadership; Equal Weight vs S&P shows breadth; Quality / Min Vol indicate whether leadership is defensive or high-beta.</div></details>`}
+function renderFactors(d){let x=d.factors||[];document.getElementById('factors').innerHTML=`<table class="matrix compact"><thead><tr><th>Factor</th><th>ETF</th><th>Valuation</th><th>1D</th><th>1W</th><th>1M</th><th>1M vs S&P</th></tr></thead><tbody>${x.map(r=>`<tr><td>${qlink(r.symbol,r.name,'symbolLink')}</td><td>${qlink(r.symbol,r.symbol,'symbolLink')}</td><td>${etfLensHTML(r.lens)}</td><td class="${cls(r['1d'])} ${heat(r['1d'])}">${pct(r['1d'])}</td><td class="${cls(r['1w'])}">${pct(r['1w'])}</td><td class="${cls(r['1m'])}">${pct(r['1m'])}</td><td class="${cls(r.rel1m)}">${pct(r.rel1m)}</td></tr>`).join('')}</tbody></table><details class="selectionDetails"><summary>How to read factor tape</summary><div class="method">Growth vs Value shows duration / earnings leadership; Equal Weight vs S&P shows breadth; Quality / Min Vol indicate whether leadership is defensive or high-beta. ETF P/E is a portfolio-level field from the public quote source and should not be read as the same methodology as a single-stock forward P/E.</div></details>`}
+
 function renderCoreTable(rows){
- return '<table class="coretable"><thead><tr><th>Name</th><th>Move</th><th>Rel.</th><th>Valuation</th><th>Catalyst</th></tr></thead><tbody>'+
- rows.map(r=>'<tr>'+
+ return '<table class="coretable"><thead><tr><th>Name</th><th>Move</th><th>Rel.</th><th>Valuation</th><th>Fundamentals</th></tr></thead><tbody>'+
+ rows.map(r=>{
+  const main='<tr>'+
    '<td><div class="nm">'+(r.material?'<span class="materialDot"></span>':'')+qlink(r.symbol,r.display,'symbolLink')+'</div><div class="sub">'+esc(r.company)+'</div></td>'+
    '<td class="mv '+cls(r.move)+'">'+pct(r.move)+'<div class="sub">1W '+pct(r["1w"])+'</div></td>'+
    '<td class="rel '+cls(r.relative)+'">'+pct(r.relative)+'<div class="sub">vs bench</div></td>'+
    '<td class="valn">'+valuationHTML(r.valuation)+'</td>'+
-   '<td class="why">'+(r.explanation?(r.link?'<a target="_blank" rel="noopener noreferrer" href="'+esc(r.link)+'">'+esc(r.explanation)+'</a>':esc(r.explanation)):'')+'</td>'+
- '</tr>').join('')+'</tbody></table>';
+   '<td class="fundn">'+fundamentalHTML(r.valuation)+'</td>'+
+  '</tr>';
+  const cat=r.explanation?'<tr class="catalystRow"><td colspan="5"><span>Catalyst</span> '+(r.link?'<a target="_blank" rel="noopener noreferrer" href="'+esc(r.link)+'">'+esc(r.explanation)+'</a>':esc(r.explanation))+'</td></tr>':'';
+  return main+cat;
+ }).join('')+'</tbody></table>';
 }
-function renderMovers(d){let core=d.core_tape||[];const a=new Set(['Semis','Memory','Semi Equip']),b=new Set(['Hyperscaler','Cloud / AI','AI Software','Data / AI','SaaS']),c=new Set(['Data Center','Neocloud','Power / Cooling','Electrical','Grid / Power','Power']);document.getElementById('coreCompute').innerHTML=renderCoreTable(core.filter(r=>a.has(r.group)));document.getElementById('corePlatforms').innerHTML=renderCoreTable(core.filter(r=>b.has(r.group)));document.getElementById('coreInfra').innerHTML=renderCoreTable(core.filter(r=>c.has(r.group)));let x=d.broad_movers||[];document.getElementById('broadMovers').innerHTML=x.length?x.map(r=>`<div class="marketMoverCard"><div><div class="name">${qlink(r.symbol,r.display,'symbolLink')}</div><div class="sector">${esc(r.company)} · ${esc(r.sector)}</div></div><div><div class="move ${cls(r.move)}">${pct(r.move)}</div><div class="relm ${cls(r.relative)}">${pct(r.relative)} vs sector</div></div><div class="moverVal">${valuationHTML(r.valuation)}</div><div class="why">${r.link?`<a target="_blank" rel="noopener noreferrer" href="${r.link}">${esc(r.explanation)}</a>`:esc(r.explanation)}</div></div>`).join(''):'<div class="sub">No broader large-cap name crossed the material-move threshold.</div>'}
-function renderSignals(d){let x=d.signals||[];document.getElementById('signals').innerHTML=x.map(r=>`<tr><td><div class="ticker">${qlink(r.symbol,r.name,'symbolLink')}</div><div class="sub">${qlink(r.symbol,r.symbol,'symbolLink')} · ${r.class}</div></td><td><span class="pill ${r.view==='OVERWEIGHT'?'ow':r.view==='UNDERWEIGHT'?'uw':'nt'}">${r.view}</span></td><td class="barcell"><div style="display:flex;justify-content:space-between;gap:6px"><b class="${cls(r.score)}">${r.score>=0?'+':''}${n(r.score,0)}</b></div>${scoreGauge(r.score)}</td><td class="${cls(r['1m'])}">${pct(r['1m'])}</td><td class="${cls(r['3m'])}">${pct(r['3m'])}</td><td class="${cls(r['6m'])}">${pct(r['6m'])}</td><td>${r.vol!==null?n(r.vol,1)+'%':'—'}</td><td class="driver">${esc(r.driver)}<div class="sub">Trend ${r.trend>=0?'+':''}${n(r.trend,0)} · Relative ${r.relative>=0?'+':''}${n(r.relative,0)} · Macro ${r.macro>=0?'+':''}${n(r.macro,0)}</div></td></tr>`).join('');
+function renderMovers(d){
+ let core=d.core_tape||[];
+ const a=new Set(['Semis','Memory','Semi Equip']),b=new Set(['Hyperscaler','Cloud / AI','AI Software','Data / AI','SaaS']),cc=new Set(['Data Center','Neocloud','Power / Cooling','Electrical','Grid / Power','Power']);
+ document.getElementById('coreCompute').innerHTML=renderCoreTable(core.filter(r=>a.has(r.group)));
+ document.getElementById('corePlatforms').innerHTML=renderCoreTable(core.filter(r=>b.has(r.group)));
+ document.getElementById('coreInfra').innerHTML=renderCoreTable(core.filter(r=>cc.has(r.group)));
+ let x=d.broad_movers||[];
+ document.getElementById('broadMovers').innerHTML=x.length?x.map(r=>`<div class="marketMoverCard"><div><div class="name">${qlink(r.symbol,r.display,'symbolLink')}</div><div class="sector">${esc(r.company)} · ${esc(r.sector)}</div></div><div><div class="move ${cls(r.move)}">${pct(r.move)}</div><div class="relm ${cls(r.relative)}">${pct(r.relative)} vs sector</div></div><div class="moverVal">${valuationHTML(r.valuation)}</div><div class="moverFund">${fundamentalHTML(r.valuation)}</div><div class="why">${r.link?`<a target="_blank" rel="noopener noreferrer" href="${r.link}">${esc(r.explanation)}</a>`:esc(r.explanation)}</div></div>`).join(''):'<div class="sub">No broader large-cap name crossed the material-move threshold.</div>'
 }
+function renderSignals(d){
+ let x=d.signals||[];
+ document.getElementById('signals').innerHTML=x.map(r=>`<tr><td><div class="ticker">${qlink(r.symbol,r.name,'symbolLink')}</div><div class="sub">${qlink(r.symbol,r.symbol,'symbolLink')} · ${r.class}</div></td><td><span class="pill ${r.view==='OVERWEIGHT'?'ow':r.view==='UNDERWEIGHT'?'uw':'nt'}">${r.view}</span></td><td>${etfLensHTML(r.lens)}</td><td class="barcell"><div style="display:flex;justify-content:space-between;gap:6px"><b class="${cls(r.score)}">${r.score>=0?'+':''}${n(r.score,0)}</b></div>${scoreGauge(r.score)}</td><td class="${cls(r['1m'])}">${pct(r['1m'])}</td><td class="${cls(r['3m'])}">${pct(r['3m'])}</td><td class="${cls(r['6m'])}">${pct(r['6m'])}</td><td>${r.vol!==null?n(r.vol,1)+'%':'—'}</td><td class="driver">${esc(r.driver)}<div class="sub">Trend ${r.trend>=0?'+':''}${n(r.trend,0)} · Relative ${r.relative>=0?'+':''}${n(r.relative,0)} · Macro ${r.macro>=0?'+':''}${n(r.macro,0)}</div></td></tr>`).join('');
+}
+
 function storyNode(x){
  if(!x)return '';
  return '<div class="fk">'+esc(x.kicker||'')+'</div><div class="ft">'+esc(x.title||'')+'</div><div class="fb">'+esc(x.body||'')+'</div>';
