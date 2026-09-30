@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "updated": "1970-01-01T00:00:00+08:00",
+    "mode": "not yet refreshed",
+    "price_policy": "Run the GitHub Action once to generate live data."
+  },
+  "market": {},
+  "curve": {},
+  "fred": {},
+  "acm": {},
+  "cvol": {},
+  "fedwatch": {},
+  "calendar": [],
+  "movers": [],
+  "core_tape": [],
+  "broad_movers": [],
+  "sectors": [],
+  "factors": [],
+  "signals": [],
+  "regime": {
+    "risk": 0,
+    "growth": 0,
+    "inflation": 0
+  },
+  "breakeven": {},
+  "takeaways": [],
+  "commentary": {
+    "headline": "Waiting for first scheduled refresh",
+    "dek": "Run the refresh workflow once.",
+    "evidence": [],
+    "deep_sections": [],
+    "stock_notes": [],
+    "positioning": {
+      "ow": [],
+      "uw": [],
+      "text": ""
+    },
+    "checks": [],
+    "meeting_summary": "",
+    "bottom_line": ""
+  },
+  "quality_issues": []
+}
