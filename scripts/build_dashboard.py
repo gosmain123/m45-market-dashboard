@@ -295,7 +295,7 @@ def treasury_curve():
     return out
 
 def fred_history(series_id):
-    txt=req(f'https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}', timeout=30).text
+    start=(sgt_now().date()-timedelta(days=550)).isoformat(); end=sgt_now().date().isoformat(); txt=req(f'https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}&cosd={start}&coed={end}', timeout=30).text
     df=pd.read_csv(StringIO(txt)); val=df.columns[-1]
     df[val]=pd.to_numeric(df[val],errors='coerce'); df['DATE']=pd.to_datetime(df['DATE'],errors='coerce')
     df=df.dropna(subset=[val,'DATE']).sort_values('DATE')
