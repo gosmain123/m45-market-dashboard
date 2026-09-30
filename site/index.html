@@ -60,6 +60,34 @@ a{color:inherit}.top{position:sticky;top:0;z-index:30;background:rgba(255,255,25
 .storyFooterPane{padding:14px 16px;border-right:1px solid var(--line2)}
 .storyFooterPane:last-child{border-right:0}
 .storyFooterPane .sfTitle{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.055em;font-weight:850;margin-bottom:7px}
+.storylineWrap{padding:16px 18px 18px;background:#fff}
+.storySummaryBox{padding:13px 15px;border:1px solid var(--line);border-left:4px solid var(--navy2);border-radius:8px;background:#f8fafc;margin-bottom:14px}
+.storySummaryBox .lbl{font-size:9px;letter-spacing:.07em;text-transform:uppercase;font-weight:850;color:var(--muted);margin-bottom:5px}
+.storySummaryBox .txt{font-size:12px;line-height:1.55;color:#2e3a4a}
+.flowNode{border:1px solid var(--line);border-radius:9px;padding:14px 16px;background:#fff;position:relative}
+.flowNode .fk{font-size:9px;letter-spacing:.075em;text-transform:uppercase;font-weight:850;color:var(--muted)}
+.flowNode .ft{font-size:15px;font-weight:850;color:var(--navy);margin-top:4px;line-height:1.28}
+.flowNode .fb{font-size:11.5px;line-height:1.55;color:#3d4958;margin-top:6px}
+.flowNode.warning{border-left:4px solid var(--red)}.flowNode.supportive{border-left:4px solid var(--green)}.flowNode.mixed{border-left:4px solid #8c99a8}
+.flowArrow{text-align:center;color:#9aa5b1;font-size:18px;line-height:26px;height:28px}
+.flowSplitLabel{display:flex;align-items:center;gap:10px;margin:3px 0 10px;color:#7a8695;font-size:9px;text-transform:uppercase;letter-spacing:.08em;font-weight:850}
+.flowSplitLabel:before,.flowSplitLabel:after{content:"";height:1px;background:var(--line);flex:1}
+.branchGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.branchCard{border:1px solid var(--line);border-radius:8px;padding:12px 13px;background:#fbfcfd;min-height:132px}
+.branchCard.supportive{border-top:3px solid var(--green)}.branchCard.warning{border-top:3px solid var(--red)}.branchCard.mixed{border-top:3px solid #98a4b1}
+.branchTag{font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:850;color:var(--muted)}
+.branchTitle{font-size:12.5px;font-weight:850;color:var(--navy);margin-top:4px;line-height:1.3}
+.branchBody{font-size:10.8px;line-height:1.52;color:#485565;margin-top:7px}
+.flowMerge{text-align:center;margin:13px 0 8px;color:#788493;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.endNode{background:linear-gradient(90deg,#f7f9fb,#fff)}
+.storyAfter{display:grid;grid-template-columns:1.25fr .75fr;gap:12px;margin-top:14px}
+.storyAfterPane{border:1px solid var(--line);border-radius:8px;padding:12px 13px;background:#fff}
+.storyAfterTitle{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:850;margin-bottom:6px}
+.nextTest2{padding:7px 0;border-bottom:1px solid var(--line2)}.nextTest2:last-child{border-bottom:0}
+.nextTest2 .evt{font-size:10.5px;font-weight:850;color:var(--navy)}.nextTest2 .test{font-size:10.2px;line-height:1.42;color:#596575;margin-top:2px}
+.storySignal{display:flex;justify-content:space-between;gap:8px;padding:5px 0;font-size:10.5px}
+.storyFootnote{font-size:9.5px;color:#7b8794;line-height:1.45;margin-top:8px}
+@media(max-width:900px){.branchGrid,.storyAfter{grid-template-columns:1fr}}
 .footer{font-size:9px;color:#8a94a1;padding:3px 2px 0}.loading{padding:22px;text-align:center;color:var(--muted)}
 @media(max-width:1160px){.grid2,.grid3,.gridAlloc{grid-template-columns:1fr}.commentaryGrid{grid-template-columns:1fr}.commentaryBlock{border-right:0}.takeaways{grid-template-columns:1fr}.take{border-right:0;border-bottom:1px solid var(--line2)}.regime{grid-template-columns:1fr 1fr}.regcell:nth-child(2){border-right:0}.metricstrip{grid-template-columns:repeat(4,1fr)}.nav{display:none}}
 @media(max-width:720px){.page,.topin{padding-left:9px;padding-right:9px}.brand span,.stamp{display:none}.regime{grid-template-columns:1fr}.regcell{border-right:0;border-bottom:1px solid var(--line2)}.metricstrip{grid-template-columns:repeat(2,1fr)}.event{grid-template-columns:85px 50px 1fr}.event .i{display:none}}
@@ -138,24 +166,33 @@ a{color:inherit}.top{position:sticky;top:0;z-index:30;background:rgba(255,255,25
 
 <section class="section" id="commentary">
   <div class="storyHead">
-    <div class="eyebrow">Daily desk commentary · full-day explanation</div>
-    <h2 id="commentaryHeadline">Loading commentary…</h2>
+    <div class="eyebrow">Daily market storyline · connected causal map</div>
+    <h2 id="commentaryHeadline">Loading storyline…</h2>
     <div class="dek" id="commentaryDek"></div>
   </div>
-  <div class="evidenceGrid" id="evidenceGrid"></div>
-  <div class="meetingSummary">
-    <div class="msLabel">90-second morning meeting summary</div>
-    <div class="msBody" id="meetingSummary"></div>
+  <div class="storylineWrap">
+    <div class="storySummaryBox"><div class="lbl">90-second story</div><div class="txt" id="meetingSummary"></div></div>
+    <div class="flowNode mixed" id="storyStart"></div>
+    <div class="flowArrow">↓</div>
+    <div class="flowNode mixed" id="storyTransmission"></div>
+    <div class="flowArrow">↓</div>
+    <div class="flowSplitLabel">The story branches here</div>
+    <div class="branchGrid" id="storyBranches"></div>
+    <div class="flowMerge">Branches reconverge into the end-of-day message ↓</div>
+    <div class="flowNode endNode mixed" id="storyResolution"></div>
+    <div class="storyAfter">
+      <div class="storyAfterPane">
+        <div class="storyAfterTitle">What would confirm or break the storyline next?</div>
+        <div id="nextChecks"></div>
+      </div>
+      <div class="storyAfterPane">
+        <div class="storyAfterTitle">Systematic cross-check · 1–6M</div>
+        <div id="positioning"></div>
+        <div class="storyFootnote">The tactical signal is a slow-moving cross-check, not the storyline itself. A conflict between the daily story and the tactical score is useful information, not an error.</div>
+      </div>
+    </div>
   </div>
-  <div class="deepDive" id="deepDive"></div>
-  <div class="storyFooterGrid">
-    <div class="storyFooterPane"><div class="sfTitle">Stocks / sectors that matter</div><div id="stockNotes"></div></div>
-    <div class="storyFooterPane"><div class="sfTitle">Tactical signal</div><div id="positioning"></div></div>
-    <div class="storyFooterPane"><div class="sfTitle">What would change the story?</div><div id="nextChecks"></div></div>
-  </div>
-  <div class="bottomLineV5" id="bottomLine"></div>
 </section>
-
 <div class="footer">Daily tactical monitor. Public-web data can be delayed and some macro/credit series are end-of-day. The OW/UW table is a systematic market signal, not a portfolio-specific recommendation.</div>
 </div>
 <script>
@@ -226,29 +263,23 @@ function renderCoreTable(rows){return `<table class="coretable"><tbody>${rows.ma
 function renderMovers(d){let core=d.core_tape||[];const a=new Set(['Semis','Memory','Semi Equip']),b=new Set(['Hyperscaler','Cloud / AI','AI Software','Data / AI','SaaS']),c=new Set(['Data Center','Neocloud','Power / Cooling','Electrical','Grid / Power','Power']);document.getElementById('coreCompute').innerHTML=renderCoreTable(core.filter(r=>a.has(r.group)));document.getElementById('corePlatforms').innerHTML=renderCoreTable(core.filter(r=>b.has(r.group)));document.getElementById('coreInfra').innerHTML=renderCoreTable(core.filter(r=>c.has(r.group)));let x=d.broad_movers||[];document.getElementById('broadMovers').innerHTML=x.length?x.map(r=>`<div class="marketMoverCard"><div><div class="name">${esc(r.display)}</div><div class="sector">${esc(r.company)} · ${esc(r.sector)}</div></div><div><div class="move ${cls(r.move)}">${pct(r.move)}</div><div class="relm ${cls(r.relative)}">${pct(r.relative)} vs sector</div></div><div class="why">${r.link?`<a target="_blank" href="${r.link}">${esc(r.explanation)}</a>`:esc(r.explanation)}</div></div>`).join(''):'<div class="sub">No broader large-cap name crossed the material-move threshold.</div>'}
 function renderSignals(d){let x=d.signals||[];document.getElementById('signals').innerHTML=x.map(r=>`<tr><td><div class="ticker">${esc(r.name)}</div><div class="sub">${r.symbol} · ${r.class}</div></td><td><span class="pill ${r.view==='OVERWEIGHT'?'ow':r.view==='UNDERWEIGHT'?'uw':'nt'}">${r.view}</span></td><td class="barcell"><div style="display:flex;justify-content:space-between;gap:6px"><b class="${cls(r.score)}">${r.score>=0?'+':''}${n(r.score,0)}</b></div>${scoreGauge(r.score)}</td><td class="${cls(r['1m'])}">${pct(r['1m'])}</td><td class="${cls(r['3m'])}">${pct(r['3m'])}</td><td class="${cls(r['6m'])}">${pct(r['6m'])}</td><td>${r.vol!==null?n(r.vol,1)+'%':'—'}</td><td class="driver">${esc(r.driver)}<div class="sub">Trend ${r.trend>=0?'+':''}${n(r.trend,0)} · Relative ${r.relative>=0?'+':''}${n(r.relative,0)} · Macro ${r.macro>=0?'+':''}${n(r.macro,0)}</div></td></tr>`).join('');
 }
+function storyNode(x){
+ if(!x)return '';
+ return '<div class="fk">'+esc(x.kicker||'')+'</div><div class="ft">'+esc(x.title||'')+'</div><div class="fb">'+esc(x.body||'')+'</div>';
+}
 function renderCommentary(d){
- const c=d.commentary||{};
- document.getElementById('commentaryHeadline').textContent=c.headline||'Daily connected story';
- document.getElementById('commentaryDek').textContent=c.dek||'';
- document.getElementById('evidenceGrid').innerHTML=(c.evidence||[]).map(x=>`<div class="evidence ${x.tone||'neutral'}"><div class="el">${esc(x.label)}</div><div class="em">${esc(x.metric)}</div><div class="et">${esc(x.text)}</div></div>`).join('');
- document.getElementById('meetingSummary').textContent=c.meeting_summary||'';
- document.getElementById('deepDive').innerHTML=(c.deep_sections||[]).map(x=>`<div class="deepSection">
-   <div class="deepMeta"><div class="deepNum">${esc(x.num)}</div><div class="deepTitle">${esc(x.title)}</div><div class="deepHeadline">${esc(x.headline)}</div></div>
-   <div class="deepContent"><div class="deepBody">${esc(x.body)}</div>
-     <div class="deepCallouts">
-       <div class="deepCallout"><div class="dcTitle">How to read it</div><div class="dcBody">${esc(x.read)}</div></div>
-       <div class="deepCallout"><div class="dcTitle">Why it matters</div><div class="dcBody">${esc(x.why)}</div></div>
-     </div>
-   </div>
- </div>`).join('');
- document.getElementById('stockNotes').innerHTML=(c.stock_notes||[]).map(x=>`<div class="stockNote">${esc(x)}</div>`).join('');
- const p=c.positioning||{};
- document.getElementById('positioning').innerHTML=
-   (p.ow||[]).map(x=>`<div class="signalLine"><span>OW · ${esc(x.name)}</span><b class="pos">+${n(x.score,0)}</b></div>`).join('')+
-   (p.uw||[]).map(x=>`<div class="signalLine"><span>UW · ${esc(x.name)}</span><b class="neg">${n(x.score,0)}</b></div>`).join('')+
-   `<div class="sub" style="line-height:1.45;margin-top:7px">${esc(p.text||'')}</div>`;
- document.getElementById('nextChecks').innerHTML=(c.checks||[]).map(x=>`<div class="nextTest"><div class="evt">${esc(x.event)}</div><div class="test">${esc(x.test)}</div></div>`).join('');
- document.getElementById('bottomLine').innerHTML=`<b>How to read the whole day.</b> ${esc(c.bottom_line||'')}`;
+ const cm=d.commentary||{}, s=cm.storyline||{};
+ document.getElementById('commentaryHeadline').textContent=cm.headline||'Daily market storyline';
+ document.getElementById('commentaryDek').textContent=cm.dek||'';
+ document.getElementById('meetingSummary').textContent=s.summary||cm.meeting_summary||'';
+ const st=document.getElementById('storyStart'); st.className='flowNode '+(s.start?.tone||'mixed'); st.innerHTML=storyNode(s.start);
+ const tr=document.getElementById('storyTransmission'); tr.className='flowNode '+(s.transmission?.tone||'mixed'); tr.innerHTML=storyNode(s.transmission);
+ document.getElementById('storyBranches').innerHTML=(s.branches||[]).map(function(x){return '<div class="branchCard '+(x.tone||'mixed')+'"><div class="branchTag">'+esc(x.tag||'BRANCH')+'</div><div class="branchTitle">'+esc(x.title||'')+'</div><div class="branchBody">'+esc(x.body||'')+'</div></div>';}).join('');
+ const en=document.getElementById('storyResolution'); en.className='flowNode endNode '+(s.resolution?.tone||'mixed'); en.innerHTML=storyNode(s.resolution);
+ const p=cm.positioning||{};
+ document.getElementById('positioning').innerHTML=(p.ow||[]).map(function(x){return '<div class="storySignal"><span>OW · '+esc(x.name)+'</span><b class="pos">+'+n(x.score,0)+'</b></div>';}).join('')+(p.uw||[]).map(function(x){return '<div class="storySignal"><span>UW · '+esc(x.name)+'</span><b class="neg">'+n(x.score,0)+'</b></div>';}).join('');
+ const nxt=(s.next&&s.next.length)?s.next:(cm.checks||[]);
+ document.getElementById('nextChecks').innerHTML=nxt.map(function(x){return '<div class="nextTest2"><div class="evt">'+esc(x.event)+'</div><div class="test">'+esc(x.test)+'</div></div>';}).join('');
 }
 function renderCalendar(d){let x=d.calendar||[];document.getElementById('cal').innerHTML=x.map(e=>`<div class="event"><div class="d">${esc(e.date)}</div><div class="t">${esc(e.time)}</div><div class="e">${esc(e.title)}${e.amount?`<span class="amt">$${n(e.amount/1e9,0)}bn</span>`:''}</div><div class="i"><span class="pill ${e.importance==='HIGH'?'high':'med'}">${e.importance}</span></div></div>`).join('')}
 async function loadData(force=false){document.getElementById('stamp').textContent='Loading latest snapshot…';try{const url='data/dashboard.json'+(force?'?v='+Date.now():'');let r=await fetch(url,{cache:force?'no-store':'default'});if(!r.ok)throw new Error('dashboard.json '+r.status);let d=await r.json();window.DATA=d;renderRegime(d);renderTakeaways(d);assetRows(d);renderRates(d);renderSimple(d);renderSectors(d);renderFactors(d);renderMovers(d);renderSignals(d);renderCalendar(d);renderCommentary(d);let t=new Date(d.meta.updated);document.getElementById('stamp').textContent='Snapshot '+t.toLocaleString('en-SG',{timeZone:'Asia/Singapore',hour12:false})+' SGT'}catch(e){document.getElementById('stamp').textContent='Snapshot unavailable';console.error(e)}}
