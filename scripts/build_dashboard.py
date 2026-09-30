@@ -829,7 +829,7 @@ def build_risk_regime(histories, market, fred):
     inf=0.65*clip(br/12.0)+0.35*(0 if real1m is None else 0)  # second leg overwritten below if breakeven history unavailable
     return {'risk':clip(risk),'growth':clip(growth),'inflation':clip(inf)}
 
-def tactical_signals(histories, regime):
+def tactical_signals(histories, regime, etf_lens=None):
     out=[]
     risk=regime['risk']; inflation=regime['inflation']
     for sym,(name,cls_,bench) in TACTICAL_ASSETS.items():
@@ -853,7 +853,7 @@ def tactical_signals(histories, regime):
         top=max(comps,key=lambda k:abs(comps[k]))
         driver=f'{top} {"supportive" if comps[top]>=0 else "negative"}'
         out.append({'symbol':sym,'name':name,'class':cls_,'view':view,'score':round(score,1),'1d':m.get('1d'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'vol':m.get('vol60'),'driver':driver,
-                    'trend':round(100*trend,1),'relative':round(100*rel,1),'macro':round(100*macro,1)})
+                    'trend':round(100*trend,1),'relative':round(100*rel,1),'macro':round(100*macro,1),'lens':(etf_lens or {}).get(sym,{})})
     return out
 
 # ---------------- INTERPRETATION ----------------
@@ -1385,20 +1385,20 @@ def market_pack():
         k=symmap[sym]; m['label']=CROSS_ASSET[k][1]; m['asset_class']=CROSS_ASSET[k][2]; out[k]=m
     return out
 
-def factors_pack(hist):
+def factors_pack(hist,etf_lens=None):
     rows=[]; sp=hist.get('SPY',{})
     for sym,name in FACTOR_ETFS.items():
         m=hist.get(sym)
         if not m: continue
-        rows.append({'symbol':sym,'name':name,'1d':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'rel1m':(m.get('1m') or 0)-(sp.get('1m') or 0)})
+        rows.append({'symbol':sym,'name':name,'1d':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'rel1m':(m.get('1m') or 0)-(sp.get('1m') or 0),'lens':(etf_lens or {}).get(sym,{})})
     return sorted(rows,key=lambda x:(x['1d'] if x['1d'] is not None else -999),reverse=True)
 
-def sectors_pack(hist):
+def sectors_pack(hist,etf_lens=None):
     rows=[]; sp=hist.get('SPY',{})
     for sym,name in SECTOR_ETFS.items():
         m=hist.get(sym)
         if not m: continue
-        rows.append({'symbol':sym,'name':name,'1d':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'3m':m.get('3m'),'rel1m':(m.get('1m') or 0)-(sp.get('1m') or 0)})
+        rows.append({'symbol':sym,'name':name,'1d':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'3m':m.get('3m'),'rel1m':(m.get('1m') or 0)-(sp.get('1m') or 0),'lens':(etf_lens or {}).get(sym,{})})
     return sorted(rows,key=lambda x:(x['1d'] if x['1d'] is not None else -999),reverse=True)
 
 def mover_score(m, relative):
@@ -1445,6 +1445,11 @@ def yahoo_valuation_pack(symbols):
                     'trailing_pe':fnum(q.get('trailingPE')),
                     'price_to_book':fnum(q.get('priceToBook')),
                     'eps_forward':fnum(q.get('epsForward')),
+                    'eps_ttm':fnum(q.get('epsTrailingTwelveMonths')),
+                    'eps_current_year':fnum(q.get('epsCurrentYear')),
+                    'price_to_sales':fnum(q.get('priceToSalesTrailing12Months')),
+                    'dividend_yield':fnum(q.get('dividendYield')),
+                    'earnings_quarterly_growth':fnum(q.get('earningsQuarterlyGrowth')),
                     'market_cap':fnum(q.get('marketCap')),
                     'currency':q.get('financialCurrency') or q.get('currency'),
                     'source':'Yahoo Finance quote'
@@ -1470,6 +1475,9 @@ def yahoo_valuation_pack(symbols):
                     'trailing_pe':rawv(sd.get('trailingPE')) or rawv(ds.get('trailingPE')),
                     'price_to_book':rawv(ds.get('priceToBook')),
                     'eps_forward':rawv(ds.get('forwardEps')),
+                    'eps_ttm':rawv(ds.get('trailingEps')),
+                    'price_to_sales':rawv(sd.get('priceToSalesTrailing12Months')),
+                    'dividend_yield':rawv(sd.get('dividendYield')) or rawv(sd.get('yield')),
                     'market_cap':rawv(sd.get('marketCap')),
                     'currency':None,'source':'Yahoo Finance quoteSummary'
                 }
@@ -1487,31 +1495,232 @@ def yahoo_valuation_pack(symbols):
             out[sym]=z
     return out
 
+
+def _rawv(x):
+    if isinstance(x,dict):
+        return fnum(x.get('raw'))
+    return fnum(x)
+
+def _pct100(x):
+    v=_rawv(x)
+    return None if v is None else (v*100 if abs(v)<=2 else v)
+
+def yahoo_fundamental_detail_pack(symbols):
+    """Richer stock fundamentals for core names / material movers only."""
+    symbols=sorted(set(symbols))
+    prev=_previous_snapshot()
+    prevmap={}
+    for r in (prev.get('core_tape') or [])+(prev.get('broad_movers') or []):
+        if r.get('symbol') and r.get('valuation'):
+            prevmap[r['symbol']]=r['valuation']
+    headers={
+        'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153 Safari/537.36',
+        'Accept-Language':'en-US,en;q=0.9'
+    }
+    try:
+        s=requests.Session()
+        try: s.get('https://fc.yahoo.com',headers=headers,timeout=8)
+        except Exception: pass
+        crumb=s.get('https://query1.finance.yahoo.com/v1/test/getcrumb',headers=headers,timeout=10).text.strip()
+    except Exception:
+        crumb=''; s=requests.Session()
+
+    def one(sym):
+        try:
+            r=s.get('https://query2.finance.yahoo.com/v10/finance/quoteSummary/'+quote(sym,safe='.-'),
+                    params={'modules':'defaultKeyStatistics,summaryDetail,financialData,earningsTrend','crumb':crumb},
+                    headers=headers,timeout=10)
+            r.raise_for_status()
+            z=(((r.json() or {}).get('quoteSummary') or {}).get('result') or [{}])[0]
+            ds=z.get('defaultKeyStatistics') or {}; sd=z.get('summaryDetail') or {}
+            fd=z.get('financialData') or {}; et=z.get('earningsTrend') or {}
+            trend=(et.get('trend') or [])
+            tr=next((x for x in trend if x.get('period')=='0y'),None) or next((x for x in trend if x.get('period')=='+1y'),None) or {}
+            eps_tr=tr.get('epsTrend') or {}
+            cur=_rawv(eps_tr.get('current')); ago=_rawv(eps_tr.get('30daysAgo'))
+            rev30=((cur/ago)-1)*100 if cur is not None and ago not in (None,0) else None
+            mcap=_rawv(fd.get('marketCap')) or _rawv(sd.get('marketCap'))
+            fcf=_rawv(fd.get('freeCashflow')); revenue=_rawv(fd.get('totalRevenue'))
+            current_px=_rawv(fd.get('currentPrice')); target=_rawv(fd.get('targetMeanPrice'))
+            return sym,{
+                'enterprise_to_ebitda':_rawv(ds.get('enterpriseToEbitda')) or _rawv(fd.get('enterpriseToEbitda')),
+                'enterprise_to_revenue':_rawv(ds.get('enterpriseToRevenue')),
+                'peg_ratio':_rawv(ds.get('pegRatio')),
+                'price_to_sales':_rawv(sd.get('priceToSalesTrailing12Months')),
+                'dividend_yield':_pct100(sd.get('dividendYield')),
+                'revenue_growth':_pct100(fd.get('revenueGrowth')),
+                'earnings_growth':_pct100(fd.get('earningsGrowth')),
+                'gross_margin':_pct100(fd.get('grossMargins')),
+                'operating_margin':_pct100(fd.get('operatingMargins')),
+                'profit_margin':_pct100(fd.get('profitMargins')),
+                'return_on_equity':_pct100(fd.get('returnOnEquity')),
+                'debt_to_equity':_rawv(fd.get('debtToEquity')),
+                'free_cashflow':fcf,
+                'total_revenue':revenue,
+                'fcf_yield':(fcf/mcap*100) if fcf is not None and mcap not in (None,0) else None,
+                'fcf_margin':(fcf/revenue*100) if fcf is not None and revenue not in (None,0) else None,
+                'eps_revision_30d':rev30,
+                'target_mean_price':target,
+                'target_upside':((target/current_px)-1)*100 if target is not None and current_px not in (None,0) else None,
+                'recommendation':fd.get('recommendationKey'),
+                'source_detail':'Yahoo Finance quoteSummary'
+            }
+        except Exception:
+            p=prevmap.get(sym) or {}
+            keep={k:p.get(k) for k in (
+                'enterprise_to_ebitda','enterprise_to_revenue','peg_ratio','price_to_sales',
+                'dividend_yield','revenue_growth','earnings_growth','gross_margin','operating_margin',
+                'profit_margin','return_on_equity','debt_to_equity','fcf_yield','fcf_margin',
+                'eps_revision_30d','target_mean_price','target_upside','recommendation'
+            )}
+            if any(v is not None for v in keep.values()):
+                keep['detail_stale']=True
+                return sym,keep
+            return sym,{}
+
+    out={}
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        futs=[ex.submit(one,sym) for sym in symbols]
+        for fut in as_completed(futs):
+            sym,z=fut.result(); out[sym]=z
+    return out
+
+def merge_valuation(raw, detail):
+    z=dict(raw or {})
+    z.update({k:v for k,v in (detail or {}).items() if v is not None})
+    return z
+
+BOND_ETF_URLS={
+    'SHY':'https://www.ishares.com/us/products/239452/ishares-1-3-year-treasury-bond-etf',
+    'IEF':'https://www.ishares.com/us/products/239456/ishares-7-10-year-treasury-bond-etf',
+    'TLT':'https://www.ishares.com/us/products/239454/ishares-20-year-treasury-bond-etf',
+    'LQD':'https://www.ishares.com/us/products/239566/ishares-iboxx-investment-grade-corporate-bond-etf',
+    'HYG':'https://www.ishares.com/us/products/239565/ishares-iboxx-high-yieldcorporate-bond-etf',
+    'EMB':'https://www.ishares.com/us/products/239572/ishares-jp-morgan-usd-emerging-markets-bond-etf',
+    'BIL':'https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-bloomberg-1-3-month-t-bill-etf-bil'
+}
+
+def _first_num(text, patterns):
+    for pat in patterns:
+        m=re.search(pat,text,re.I|re.S)
+        if m:
+            return fnum(m.group(1))
+    return None
+
+def bond_etf_characteristics():
+    """Issuer-page carry / duration lens for fixed-income ETFs."""
+    prev=_previous_snapshot().get('etf_lens',{})
+    out={}
+    headers={
+      'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153 Safari/537.36',
+      'Accept-Language':'en-US,en;q=0.9'
+    }
+    seeds={
+      'SHY':{'ytm':4.86,'duration':1.79,'sec_yield':4.41,'oas':-0.24,'asof':'2026-09-24'},
+      'IEF':{'ytm':5.17,'duration':6.86,'sec_yield':4.84,'oas':3.36,'asof':'2026-09-24'},
+      'TLT':{'ytm':5.54,'duration':14.88,'sec_yield':5.41,'oas':-0.21,'asof':'2026-09-24'},
+      'LQD':{'ytm':6.08,'duration':7.61,'sec_yield':5.84,'oas':85.83,'asof':'2026-09-25'},
+      'HYG':{'ytm':7.38,'duration':3.09,'sec_yield':6.54,'oas':247.48,'asof':'2026-09-10'},
+      'EMB':{'ytm':6.96,'duration':6.33,'sec_yield':6.21,'oas':179.53,'asof':'2026-09-25'},
+      'BIL':{'ytm':3.91,'duration':0.11,'sec_yield':3.59,'oas':None,'asof':'2026-09-18'}
+    }
+    def one(sym,url):
+        try:
+            text=BeautifulSoup(req(url,timeout=14,headers=headers).text,'html.parser').get_text(' ',strip=True)
+            ytm=_first_num(text,[r'Average Yield to Maturity.{0,120}?(-?\d+(?:\.\d+)?)\s*%',r'Yield to Maturity.{0,120}?(-?\d+(?:\.\d+)?)\s*%'])
+            dur=_first_num(text,[r'Effective Duration.{0,120}?(-?\d+(?:\.\d+)?)\s*yrs',r'Option Adjusted Duration.{0,120}?(-?\d+(?:\.\d+)?)\s*years'])
+            sec=_first_num(text,[r'30 Day SEC Yield.{0,120}?(-?\d+(?:\.\d+)?)\s*%'])
+            oas=_first_num(text,[r'Option Adjusted Spread.{0,120}?(-?\d+(?:\.\d+)?)\s*bps'])
+            vals={'type':'fixed_income','ytm':ytm,'duration':dur,'sec_yield':sec,'oas':oas,'source_url':url,'source':'issuer page','stale':False}
+            if any(vals.get(k) is not None for k in ('ytm','duration','sec_yield')):
+                return sym,vals
+            raise ValueError('no characteristics parsed')
+        except Exception:
+            p=prev.get(sym) if isinstance(prev,dict) else None
+            if isinstance(p,dict) and p.get('type')=='fixed_income' and any(p.get(k) is not None for k in ('ytm','duration','sec_yield')):
+                z=dict(p); z['stale']=True; z['source_status']='last-good cache'; return sym,z
+            z=dict(seeds[sym]); z.update({'type':'fixed_income','source_url':url,'source':'issuer seed','stale':True})
+            return sym,z
+    with ThreadPoolExecutor(max_workers=7) as ex:
+        futs=[ex.submit(one,sym,url) for sym,url in BOND_ETF_URLS.items()]
+        for fut in as_completed(futs):
+            sym,z=fut.result(); out[sym]=z
+    return out
+
+def equity_etf_lens(symbols):
+    raw=yahoo_valuation_pack(symbols)
+    out={}
+    for sym in symbols:
+        r=raw.get(sym) or {}
+        pe=r.get('forward_pe') if r.get('forward_pe') and r.get('forward_pe')>0 else r.get('trailing_pe')
+        pe_label='Fwd P/E' if r.get('forward_pe') and r.get('forward_pe')>0 else 'P/E'
+        dy=r.get('dividend_yield')
+        if dy is not None and abs(dy)<=1: dy*=100
+        out[sym]={
+            'type':'equity','pe':pe,'pe_label':pe_label,'pb':r.get('price_to_book'),
+            'ps':r.get('price_to_sales'),'yield':dy,
+            'source':'public ETF quote metrics','stale':bool(r.get('stale'))
+        }
+    return out
+
+def etf_lens_pack():
+    equity_syms=set(SECTOR_ETFS)|set(FACTOR_ETFS)|{'SPY','EFA','EEM','IWM','ACWI'}
+    out=equity_etf_lens(equity_syms)
+    out.update(bond_etf_characteristics())
+    for sym in ('GLD','DBC'):
+        out[sym]={'type':'real_asset','source':'not earnings-valued'}
+    return out
+
 def choose_valuation(symbol, raw):
     raw=raw or {}
     fpe=raw.get('forward_pe'); tpe=raw.get('trailing_pe'); pb=raw.get('price_to_book')
+    ev_ebitda=raw.get('enterprise_to_ebitda'); ev_sales=raw.get('enterprise_to_revenue')
+    ps=raw.get('price_to_sales'); peg=raw.get('peg_ratio')
     metric=None; value=None; note=''
     if symbol in BANK_VALUATION_SYMBOLS and pb and pb>0:
         metric='P/B'; value=pb
-        note='Bank valuation: price-to-book is used because balance-sheet equity is more decision-useful than an enterprise multiple.'
+        note='Bank valuation: P/B is the primary screen; ROE and EPS revisions are shown separately.'
     elif symbol in REIT_VALUATION_SYMBOLS and pb and pb>0:
         metric='P/B*'; value=pb
-        note='REIT public-data proxy. P/AFFO is preferable for REIT underwriting, but a consistent forward AFFO feed is not available in the free source; P/B is shown as a screening proxy only.'
+        note='REIT screening proxy. Forward P/AFFO is preferable, but a consistent free AFFO consensus feed is unavailable.'
     elif fpe and fpe>0 and fpe<1000:
         metric='Fwd P/E'; value=fpe
         note='Forward P/E uses forecast EPS from the quote feed.'
+    elif ev_sales and ev_sales>0 and ev_sales<1000:
+        metric='EV/Sales'; value=ev_sales
+        note='Positive earnings multiple is not meaningful; EV/Sales is used instead.'
+    elif ps and ps>0 and ps<1000:
+        metric='P/S'; value=ps
+        note='Positive earnings multiple is not meaningful; P/S is used instead.'
     elif tpe and tpe>0 and tpe<1000:
         metric='TTM P/E'; value=tpe
-        note='Forward P/E was unavailable or not meaningful, so trailing P/E is shown.'
+        note='Forward P/E was unavailable, so trailing P/E is shown.'
     else:
         metric='N/M'; value=None
-        note='No reliable positive earnings multiple was available. A generic P/B fallback is intentionally not used outside banks / REIT screening because it can be economically misleading.'
+        note='No reliable earnings or sales multiple was available; no generic multiple is forced.'
+    secondary=None; secondary_metric=None
+    if symbol not in BANK_VALUATION_SYMBOLS|REIT_VALUATION_SYMBOLS and ev_ebitda and ev_ebitda>0 and ev_ebitda<500:
+        secondary_metric='EV/EBITDA'; secondary=ev_ebitda
+    elif ps and ps>0 and ps<500 and metric!='P/S':
+        secondary_metric='P/S'; secondary=ps
+    elif pb and pb>0 and pb<500 and metric not in ('P/B','P/B*'):
+        secondary_metric='P/B'; secondary=pb
     return {
         'metric':metric,'value':value,'note':note,
-        'forward_pe':fpe,'trailing_pe':tpe,'price_to_book':pb,
+        'secondary_metric':secondary_metric,'secondary':secondary,
+        'forward_pe':fpe,'trailing_pe':tpe,'price_to_book':pb,'price_to_sales':ps,
+        'enterprise_to_ebitda':ev_ebitda,'enterprise_to_revenue':ev_sales,'peg_ratio':peg,
+        'dividend_yield':raw.get('dividend_yield'),
+        'revenue_growth':raw.get('revenue_growth'),'earnings_growth':raw.get('earnings_growth'),
+        'gross_margin':raw.get('gross_margin'),'operating_margin':raw.get('operating_margin'),
+        'profit_margin':raw.get('profit_margin'),'return_on_equity':raw.get('return_on_equity'),
+        'debt_to_equity':raw.get('debt_to_equity'),'fcf_yield':raw.get('fcf_yield'),
+        'fcf_margin':raw.get('fcf_margin'),'eps_revision_30d':raw.get('eps_revision_30d'),
+        'target_mean_price':raw.get('target_mean_price'),'target_upside':raw.get('target_upside'),
+        'recommendation':raw.get('recommendation'),
         'market_cap':raw.get('market_cap'),'currency':raw.get('currency'),
-        'source':raw.get('source') or raw.get('source_status') or 'public quote feed',
-        'stale':bool(raw.get('stale'))
+        'source':raw.get('source_detail') or raw.get('source') or raw.get('source_status') or 'public quote feed',
+        'stale':bool(raw.get('stale') or raw.get('detail_stale'))
     }
 
 def stock_monitor_pack():
@@ -1519,6 +1728,7 @@ def stock_monitor_pack():
     broad_benches=set(v[2] for v in BROAD_WATCHLIST.values())
     hist=load_symbol_set(set(WATCHLIST)|set(BROAD_WATCHLIST)|core_benches|broad_benches)
     valuations=yahoo_valuation_pack(set(WATCHLIST)|set(BROAD_WATCHLIST))
+    core_details=yahoo_fundamental_detail_pack(set(WATCHLIST))
     core=[]; material=[]
     for sym,(company,group,bench) in WATCHLIST.items():
         m=hist.get(sym); b=hist.get(bench)
@@ -1534,7 +1744,7 @@ def stock_monitor_pack():
                 if category!='Company / sector news':
                     expl=f'{category}: {news[0]["title"]}'
                     link=news[0]['link']; conf='Headline-linked'
-        row={'symbol':sym,'display':sym.replace('.KS',''),'company':company,'group':group,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'relative':rel,'score':score,'material':flag,'explanation':expl,'link':link,'confidence':conf,'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,valuations.get(sym))}
+        row={'symbol':sym,'display':sym.replace('.KS',''),'company':company,'group':group,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'relative':rel,'score':score,'material':flag,'explanation':expl,'link':link,'confidence':conf,'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,merge_valuation(valuations.get(sym),core_details.get(sym)))}
         core.append(row)
         if flag: material.append(row)
     rank={g:i for i,g in enumerate(CORE_GROUP_ORDER)}
@@ -1548,7 +1758,9 @@ def stock_monitor_pack():
         if abs(m['1d'])<3.0 and abs(rel or 0)<2.0: continue
         broad_rows.append({'symbol':sym,'display':sym,'company':company,'sector':sector,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'relative':rel,'score':mover_score(m,rel),'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,valuations.get(sym))})
     broad_rows.sort(key=lambda r:-r['score']); broad_rows=broad_rows[:10]
+    broad_details=yahoo_fundamental_detail_pack({r['symbol'] for r in broad_rows})
     for r in broad_rows:
+        r['valuation']=choose_valuation(r['symbol'],merge_valuation(valuations.get(r['symbol']),broad_details.get(r['symbol'])))
         r['explanation']=''; r['link']=''; r['confidence']='Monitor'
         news=yahoo_news(r['symbol'],r['company'])
         if news:
@@ -1620,9 +1832,10 @@ def build_dashboard():
         regime['inflation']=clip(0.65*clip(((market.get('brent') or {}).get('1m') or 0)/12.0)+0.35*clip(bechg/8.0))
         breakeven={'value':be,'bp1d':bechg}
     except: breakeven={'error':'unavailable'}
-    signals=tactical_signals(histories,regime)
-    sectors=sectors_pack(histories)
-    factors=factors_pack(histories)
+    etf_lens=etf_lens_pack()
+    signals=tactical_signals(histories,regime,etf_lens)
+    sectors=sectors_pack(histories,etf_lens)
+    factors=factors_pack(histories,etf_lens)
     lqd=histories.get('LQD') or {}; hyg=histories.get('HYG') or {}; ief=histories.get('IEF') or {}
     def relret(a,b,key):
         av=a.get(key); bv=b.get(key)
@@ -1634,7 +1847,7 @@ def build_dashboard():
       'hy_vs_tsy':{'1d':relret(hyg,ief,'1d'),'1m':relret(hyg,ief,'1m'),'asof':hyg.get('asof') or ief.get('asof')}
     }
     payload={'market':market,'curve':curve,'fred':fred,'credit_proxy':credit_proxy,'acm':fp.get('acm',{}),'cvol':fp.get('cvol',{}),'fedwatch':fp.get('fedwatch',{}),'calendar':fp.get('calendar',[]),'auctions':fp.get('auctions',[]),
-             'movers':movers,'core_tape':core_tape,'broad_movers':broad_movers,'sectors':sectors,'factors':factors,'signals':signals,'regime':regime,'breakeven':breakeven}
+             'movers':movers,'core_tape':core_tape,'broad_movers':broad_movers,'sectors':sectors,'factors':factors,'signals':signals,'etf_lens':etf_lens,'regime':regime,'breakeven':breakeven}
     payload['takeaways']=top_takeaways(payload)
     payload['commentary']=build_commentary(payload)
     quality=[]
