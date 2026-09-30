@@ -753,12 +753,13 @@ def major_calendar():
         dt=r['dt']
         if dt < now-timedelta(hours=36): continue
         if dt > now+timedelta(days=45): continue
-        key=(dt.strftime('%Y-%m-%d %H:%M'),r['group'])
+        key=(dt.strftime('%Y-%m-%d'),r['group'])
         g=groups.setdefault(key,{
             'dt':dt,'title':r['group'],'period':r.get('period',''),
             'metrics':[],'market_url':r.get('market_url') or 'https://tradingeconomics.com/united-states/calendar'
         })
         if not g.get('period') and r.get('period'): g['period']=r['period']
+        if dt < g['dt']: g['dt']=dt
         g['metrics'].append({
             'name':r['metric'],'previous':r['previous'],'consensus':r['consensus'],
             'actual':r['actual'],'forecast':r['forecast'],'surprise':r['surprise'],
