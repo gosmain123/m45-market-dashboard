@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>M45 Morning</title>
+<title>Market Dashboard</title>
 <style>
 :root{
   --ink:#182231;--muted:#6e7886;--line:#dfe4e9;--line2:#edf0f3;--paper:#fff;--bg:#f3f5f7;
@@ -69,7 +69,7 @@ a{color:inherit}.top{position:sticky;top:0;z-index:30;background:rgba(255,255,25
 </head>
 <body>
 <div class="top"><div class="topin">
-  <div class="brand"><b>M45 MORNING</b><span>Global cross-asset monitor · Singapore AM · scheduled public-data snapshot</span></div>
+  <div class="brand"><b>MARKET DASHBOARD</b><span>Global cross-asset monitor · Singapore AM · scheduled public-data snapshot</span></div>
   <div class="nav"><a href="#overview">Overview</a><a href="#rates">Rates & Credit</a><a href="#equities">Equities</a><a href="#allocation">Allocation</a><a href="#calendar">Calendar</a><a href="#commentary">Commentary</a></div>
   <div class="right"><span class="stamp" id="stamp">Loading…</span><button onclick="loadData(true)">Refresh</button></div>
 </div></div>
@@ -214,7 +214,7 @@ function drawCurve(c){const svg=document.getElementById('curveSvg');let ks=['2Y'
 
 function renderSimple(d){
  const f=d.fred||{}, m=d.market||{};
- document.getElementById('credit').innerHTML=table3([['IG OAS',f.ig_oas?.value!==undefined?n(f.ig_oas.value*100,0)+' bp':'—',bp((f.ig_oas?.['1d']||0)*100),bp((f.ig_oas?.['1m']||0)*100)],['HY OAS',f.hy_oas?.value!==undefined?n(f.hy_oas.value*100,0)+' bp':'—',bp((f.hy_oas?.['1d']||0)*100),bp((f.hy_oas?.['1m']||0)*100)],['CCC OAS',f.ccc_oas?.value!==undefined?n(f.ccc_oas.value*100,0)+' bp':'—',bp((f.ccc_oas?.['1d']||0)*100),bp((f.ccc_oas?.['1m']||0)*100)]],['Spread','1D','1M']);
+ const cbp=(x)=>x===null||x===undefined?'—':bp(x*100); document.getElementById('credit').innerHTML=table3([['IG OAS',f.ig_oas?.value!==undefined?n(f.ig_oas.value*100,0)+' bp':'—',cbp(f.ig_oas?.['1d']),cbp(f.ig_oas?.['1m'])],['HY OAS',f.hy_oas?.value!==undefined?n(f.hy_oas.value*100,0)+' bp':'—',cbp(f.hy_oas?.['1d']),cbp(f.hy_oas?.['1m'])],['CCC OAS',f.ccc_oas?.value!==undefined?n(f.ccc_oas.value*100,0)+' bp':'—',cbp(f.ccc_oas?.['1d']),cbp(f.ccc_oas?.['1m'])]],['Spread','1D','1M']);
  document.getElementById('fx').innerHTML=table3([['DXY',priceFmt('dxy',m.dxy?.price),pct(m.dxy?.['1d']),pct(m.dxy?.['1m'])],['USD/JPY',priceFmt('usdjpy',m.usdjpy?.price),pct(m.usdjpy?.['1d']),pct(m.usdjpy?.['1m'])],['EUR/USD',priceFmt('eurusd',m.eurusd?.price),pct(m.eurusd?.['1d']),pct(m.eurusd?.['1m'])],['USD/CNH',priceFmt('usdcnh',m.usdcnh?.price),pct(m.usdcnh?.['1d']),pct(m.usdcnh?.['1m'])]],['Level','1D','1M']);
  document.getElementById('commodities').innerHTML=table3([['Brent',priceFmt('brent',m.brent?.price),pct(m.brent?.['1d']),pct(m.brent?.['1m'])],['WTI',priceFmt('wti',m.wti?.price),pct(m.wti?.['1d']),pct(m.wti?.['1m'])],['Gold',priceFmt('gold',m.gold?.price),pct(m.gold?.['1d']),pct(m.gold?.['1m'])],['Copper',priceFmt('copper',m.copper?.price),pct(m.copper?.['1d']),pct(m.copper?.['1m'])]],['Level','1D','1M']);
 }
