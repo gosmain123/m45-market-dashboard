@@ -18,6 +18,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: market-dashboard-refresh
+  cancel-in-progress: true
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
@@ -48,5 +52,6 @@ jobs:
             echo "No data change."
           else
             git commit -m "data: refresh dashboard"
+            git pull --rebase origin main
             git push
           fi
