@@ -348,14 +348,14 @@ function valuationHTML(v,sym){
  return '<div'+infoAttrs('stock',sym)+'><div class="valmain">'+value+' <span class="infoGlyph">i</span></div><div class="valmetric">'+esc(label)+(v.stale?' · cached':'')+'</div>'+secondary+'</div>';
 }
 function fundamentalHTML(v,sym){
- v=v||{}; let a='—',b='';
- if(v.return_on_equity!==null&&v.return_on_equity!==undefined&&v.metric==='P/B'){a='ROE '+n(v.return_on_equity,1)+'%'}
- else if(v.revenue_growth!==null&&v.revenue_growth!==undefined){a='Rev '+pct(v.revenue_growth,0)}
- if(v.eps_revision_30d!==null&&v.eps_revision_30d!==undefined){b='EPS rev '+pct(v.eps_revision_30d,1)}
- else if(v.fcf_yield!==null&&v.fcf_yield!==undefined){b='FCF yld '+n(v.fcf_yield,1)+'%'}
- else if(v.fcf_margin!==null&&v.fcf_margin!==undefined){b='FCF mgn '+n(v.fcf_margin,1)+'%'}
+ v=v||{}; let a='—',b='',toneA='',toneB='';
+ if(v.return_on_equity!==null&&v.return_on_equity!==undefined&&v.metric==='P/B'){a='ROE '+n(v.return_on_equity,1)+'%';toneA=valueTone(v.return_on_equity)}
+ else if(v.revenue_growth!==null&&v.revenue_growth!==undefined){a='Rev '+pct(v.revenue_growth,0);toneA=valueTone(v.revenue_growth)}
+ if(v.eps_revision_30d!==null&&v.eps_revision_30d!==undefined){b='EPS rev '+pct(v.eps_revision_30d,1);toneB=valueTone(v.eps_revision_30d)}
+ else if(v.fcf_yield!==null&&v.fcf_yield!==undefined){b='FCF yld '+n(v.fcf_yield,1)+'%';toneB=valueTone(v.fcf_yield)}
+ else if(v.fcf_margin!==null&&v.fcf_margin!==undefined){b='FCF mgn '+n(v.fcf_margin,1)+'%';toneB=valueTone(v.fcf_margin)}
  else if(v.operating_margin!==null&&v.operating_margin!==undefined){b='Op mgn '+n(v.operating_margin,1)+'%'}
- return '<div'+infoAttrs('stock',sym)+'><div class="fundmain">'+a+' <span class="infoGlyph">i</span></div><div class="fundsub">'+b+'</div></div>';
+ return '<div class="fundwrap staticFund"><div class="fundmain '+toneA+'">'+a+'</div><div class="fundsub '+toneB+'">'+b+'</div></div>';
 }
 function etfLensHTML(l,sym){
  l=l||{};
@@ -575,34 +575,55 @@ function renderSectors(d){let x=d.sectors||[];document.getElementById('sectors')
 
 function renderFactors(d){let x=d.factors||[];document.getElementById('factors').innerHTML=`<table class="matrix compact"><thead><tr><th>Factor</th><th>ETF</th><th>Valuation</th><th>1D</th><th>1W</th><th>1M</th><th>1M vs S&P</th></tr></thead><tbody>${x.map(r=>`<tr><td>${qlink(r.symbol,r.name,'symbolLink')}</td><td>${qlink(r.symbol,r.symbol,'symbolLink')}</td><td>${etfLensHTML(r.lens,r.symbol)}</td><td class="${cls(r['1d'])} ${heat(r['1d'])}">${pct(r['1d'])}</td><td class="${cls(r['1w'])}">${pct(r['1w'])}</td><td class="${cls(r['1m'])}">${pct(r['1m'])}</td><td class="${cls(r.rel1m)}">${pct(r.rel1m)}</td></tr>`).join('')}</tbody></table><details class="selectionDetails"><summary>How to read factor tape</summary><div class="method">Growth vs Value shows duration / earnings leadership; Equal Weight vs S&P shows breadth; Quality / Min Vol indicate whether leadership is defensive or high-beta. ETF P/E is a portfolio-level field from the public quote source and should not be read as the same methodology as a single-stock forward P/E.</div></details>`}
 
-function renderCoreTable(rows){
- return '<table class="coretable"><thead><tr><th>Name</th><th>Move</th><th>Rel.</th><th>Valuation</th><th>Fundamentals</th></tr></thead><tbody>'+
- rows.map(r=>{
-  const main='<tr>'+
-   '<td><div class="nm">'+(r.material?'<span class="materialDot"></span>':'')+qlink(r.symbol,r.display,'symbolLink')+'</div><div class="sub">'+esc(r.company)+'</div></td>'+
-   '<td class="mv '+cls(r.move)+'">'+pct(r.move)+'<div class="sub">1W '+pct(r["1w"])+'</div></td>'+
-   '<td class="rel '+cls(r.relative)+'">'+pct(r.relative)+'<div class="sub">vs bench</div></td>'+
+function coreGroupLabel(group){
+ if(['Semis','Memory','Semi Equip'].includes(group))return 'AI Compute / Memory / Equipment';
+ if(['Hyperscaler','Cloud / AI','AI Software','Data / AI','SaaS'].includes(group))return 'Hyperscalers / AI Platforms / Software';
+ if(['Data Center','Neocloud','Power / Cooling','Electrical','Grid / Power','Power'].includes(group))return 'Data Center / Power / Grid';
+ return group||'Other';
+}
+function coreRow(r){
+ const catalyst=r.explanation?'<tr class="catalystRow"><td colspan="7"><span>Catalyst</span> '+(r.link?'<a target="_blank" rel="noopener noreferrer" href="'+esc(r.link)+'">'+esc(r.explanation)+'</a>':esc(r.explanation))+'</td></tr>':'';
+ const main='<tr>'+
+   '<td class="coreName"><div class="nm">'+(r.material?'<span class="materialDot"></span>':'')+qlink(r.symbol,r.display,'symbolLink')+'</div><div class="sub">'+esc(r.company)+'</div></td>'+
+   '<td class="num '+cls(r.move)+'"><b>'+pct(r.move)+'</b></td>'+
+   '<td class="num '+cls(r['1w'])+'">'+pct(r['1w'])+'</td>'+
+   '<td class="num '+cls(r.relative)+'">'+pct(r.relative)+'</td>'+
    '<td class="valn">'+valuationHTML(r.valuation,r.symbol)+'</td>'+
    '<td class="fundn">'+fundamentalHTML(r.valuation,r.symbol)+'</td>'+
-  '</tr>';
-  const cat=r.explanation?'<tr class="catalystRow"><td colspan="5"><span>Catalyst</span> '+(r.link?'<a target="_blank" rel="noopener noreferrer" href="'+esc(r.link)+'">'+esc(r.explanation)+'</a>':esc(r.explanation))+'</td></tr>':'';
-  return main+cat;
- }).join('')+'</tbody></table>';
+   '<td class="coreContext">'+esc(r.group||'')+'</td>'+
+ '</tr>';
+ return main+catalyst;
+}
+function renderCoreCoverage(rows){
+ const order=['AI Compute / Memory / Equipment','Hyperscalers / AI Platforms / Software','Data Center / Power / Grid'];
+ const grouped={};
+ (rows||[]).forEach(function(r){const g=coreGroupLabel(r.group);(grouped[g]||(grouped[g]=[])).push(r)});
+ const groups=order.filter(function(g){return grouped[g]}).concat(Object.keys(grouped).filter(function(g){return !order.includes(g)}));
+ return '<table class="researchTable coreResearchTable"><thead><tr><th>Name</th><th>1D</th><th>1W</th><th>Relative</th><th>Valuation</th><th>Fundamentals</th><th>Theme</th></tr></thead><tbody>'+
+ groups.map(function(g){return '<tr class="researchGroup"><td colspan="7">'+esc(g)+'</td></tr>'+grouped[g].map(coreRow).join('')}).join('')+
+ '</tbody></table>';
+}
+function renderBroadTable(rows){
+ if(!rows||!rows.length)return '<div class="emptyState">No broader large-cap name crossed the material-move threshold.</div>';
+ return '<table class="researchTable broadResearchTable"><thead><tr><th>Name</th><th>Sector</th><th>1D</th><th>vs Sector</th><th>Valuation</th><th>Fundamentals</th><th>Catalyst</th></tr></thead><tbody>'+
+ rows.map(function(r){return '<tr>'+
+   '<td class="coreName"><div class="nm">'+qlink(r.symbol,r.display,'symbolLink')+'</div><div class="sub">'+esc(r.company)+'</div></td>'+
+   '<td>'+esc(r.sector)+'</td>'+
+   '<td class="num '+cls(r.move)+'"><b>'+pct(r.move)+'</b></td>'+
+   '<td class="num '+cls(r.relative)+'">'+pct(r.relative)+'</td>'+
+   '<td class="valn">'+valuationHTML(r.valuation,r.symbol)+'</td>'+
+   '<td class="fundn">'+fundamentalHTML(r.valuation,r.symbol)+'</td>'+
+   '<td class="catalystCell">'+(r.explanation?(r.link?'<a target="_blank" rel="noopener noreferrer" href="'+esc(r.link)+'">'+esc(r.explanation)+'</a>':esc(r.explanation)):'')+'</td>'+
+ '</tr>'}).join('')+'</tbody></table>';
 }
 function renderMovers(d){
- let core=d.core_tape||[];
- const a=new Set(['Semis','Memory','Semi Equip']),b=new Set(['Hyperscaler','Cloud / AI','AI Software','Data / AI','SaaS']),cc=new Set(['Data Center','Neocloud','Power / Cooling','Electrical','Grid / Power','Power']);
- document.getElementById('coreCompute').innerHTML=renderCoreTable(core.filter(r=>a.has(r.group)));
- document.getElementById('corePlatforms').innerHTML=renderCoreTable(core.filter(r=>b.has(r.group)));
- document.getElementById('coreInfra').innerHTML=renderCoreTable(core.filter(r=>cc.has(r.group)));
- let x=d.broad_movers||[];
- document.getElementById('broadMovers').innerHTML=x.length?x.map(r=>`<div class="marketMoverCard"><div><div class="name">${qlink(r.symbol,r.display,'symbolLink')}</div><div class="sector">${esc(r.company)} · ${esc(r.sector)}</div></div><div><div class="move ${cls(r.move)}">${pct(r.move)}</div><div class="relm ${cls(r.relative)}">${pct(r.relative)} vs sector</div></div><div class="moverVal">${valuationHTML(r.valuation,r.symbol)}</div><div class="moverFund">${fundamentalHTML(r.valuation,r.symbol)}</div><div class="why">${r.link?`<a target="_blank" rel="noopener noreferrer" href="${r.link}">${esc(r.explanation)}</a>`:esc(r.explanation)}</div></div>`).join(''):'<div class="sub">No broader large-cap name crossed the material-move threshold.</div>'
+ document.getElementById('coreCoverage').innerHTML=renderCoreCoverage(d.core_tape||[]);
+ document.getElementById('broadMovers').innerHTML=renderBroadTable(d.broad_movers||[]);
 }
 function renderSignals(d){
  let x=d.signals||[];
- document.getElementById('signals').innerHTML=x.map(r=>`<tr><td><div class="ticker">${qlink(r.symbol,r.name,'symbolLink')}</div><div class="sub">${qlink(r.symbol,r.symbol,'symbolLink')} · ${r.class}</div></td><td><span class="pill ${r.view==='OVERWEIGHT'?'ow':r.view==='UNDERWEIGHT'?'uw':'nt'}">${r.view}</span></td><td>${etfLensHTML(r.lens,r.symbol)}</td><td class="barcell"><div style="display:flex;justify-content:space-between;gap:6px"><b class="${cls(r.score)}">${r.score>=0?'+':''}${n(r.score,0)}</b></div>${scoreGauge(r.score)}</td><td class="${cls(r['1m'])}">${pct(r['1m'])}</td><td class="${cls(r['3m'])}">${pct(r['3m'])}</td><td class="${cls(r['6m'])}">${pct(r['6m'])}</td><td>${r.vol!==null?n(r.vol,1)+'%':'—'}</td><td class="driver">${esc(r.driver)}<div class="sub">Trend ${r.trend>=0?'+':''}${n(r.trend,0)} · Relative ${r.relative>=0?'+':''}${n(r.relative,0)} · Macro ${r.macro>=0?'+':''}${n(r.macro,0)}</div></td></tr>`).join('');
+ document.getElementById('signals').innerHTML=x.map(function(r){return '<tr><td><div class="ticker">'+qlink(r.symbol,r.name,'symbolLink')+'</div><div class="sub">'+qlink(r.symbol,r.symbol,'symbolLink')+' · '+r.class+'</div></td><td><span class="pill '+(r.view==='OVERWEIGHT'?'ow':r.view==='UNDERWEIGHT'?'uw':'nt')+'">'+r.view+'</span></td><td>'+etfLensHTML(r.lens,r.symbol)+'</td><td class="barcell"><div style="display:flex;justify-content:space-between;gap:6px"><b class="'+cls(r.score)+'">'+(r.score>=0?'+':'')+n(r.score,0)+'</b></div>'+scoreGauge(r.score)+'</td><td class="'+cls(r['1m'])+'">'+pct(r['1m'])+'</td><td class="'+cls(r['3m'])+'">'+pct(r['3m'])+'</td><td class="'+cls(r['6m'])+'">'+pct(r['6m'])+'</td><td>'+(r.vol!==null?n(r.vol,1)+'%':'—')+'</td><td class="driver">'+esc(r.driver)+'<div class="sub">Trend '+(r.trend>=0?'+':'')+n(r.trend,0)+' · Relative '+(r.relative>=0?'+':'')+n(r.relative,0)+' · Macro '+(r.macro>=0?'+':'')+n(r.macro,0)+'</div></td></tr>'}).join('');
 }
-
 function storyNode(x){
  if(!x)return '';
  return '<div class="fk">'+esc(x.kicker||'')+'</div><div class="ft">'+esc(x.title||'')+'</div><div class="fb">'+esc(x.body||'')+'</div>';
