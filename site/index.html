@@ -225,6 +225,76 @@ body{font-size:13.25px;line-height:1.38;letter-spacing:0;background:#eef1f4;colo
  .page{padding-left:9px;padding-right:9px}.detailPopover{width:calc(100vw - 18px);left:9px!important}.detailGrid{grid-template-columns:1fr}.detailSection.detailWide{grid-column:auto}
  .stockGrid{grid-template-columns:1fr}.marketMoverGrid{grid-template-columns:1fr}.marketMoverCard{grid-template-columns:90px 58px 72px 75px 1fr}
 }
+
+/* Final readability pass: flatter hierarchy, wider research tables, one detail trigger */
+.section{background:#fff;border:1px solid #cfd6dd;border-radius:2px;overflow:visible}
+.sh{background:#f5f7f9;border-bottom:1px solid #cfd6dd;min-height:42px}
+.st{font-size:11px;font-weight:800;letter-spacing:.035em}
+.sn{font-size:10px;color:#737e8a}
+.body{padding:11px 12px}
+
+.researchTable{width:100%;border-collapse:collapse;table-layout:fixed}
+.researchTable thead th{position:sticky;top:42px;z-index:4;background:#eef2f5;border-bottom:1px solid #c7cfd7;color:#586573;font-size:8.4px;letter-spacing:.055em;text-transform:uppercase;font-weight:800;padding:7px 8px;text-align:right}
+.researchTable thead th:first-child,.researchTable thead th:nth-child(2),.researchTable thead th:last-child{text-align:left}
+.researchTable td{padding:7px 8px;border-bottom:1px solid #e6e9ed;font-size:10.6px;vertical-align:middle;overflow:hidden;text-overflow:ellipsis}
+.researchTable tbody tr:not(.researchGroup):not(.catalystRow):hover td{background:#f7f9fb}
+.researchTable .num{text-align:right;white-space:nowrap}
+.researchTable .coreName .nm{font-size:11px;font-weight:800;color:#17334d}
+.researchTable .coreContext{font-size:9px;color:#707c88}
+.researchTable .catalystCell{font-size:9.7px;line-height:1.35;white-space:normal;color:#4f5d69}
+.researchTable .catalystCell a{color:#315f88;text-decoration:none}
+.researchTable .catalystCell a:hover{text-decoration:underline}
+.researchGroup td{padding:7px 8px!important;background:#e9eef2!important;color:#425363!important;font-size:8.6px!important;text-transform:uppercase;letter-spacing:.065em;font-weight:850!important;border-top:1px solid #cdd5dc;border-bottom:1px solid #d5dce2}
+
+.coreResearchTable th:nth-child(1){width:19%}.coreResearchTable th:nth-child(2){width:8%}.coreResearchTable th:nth-child(3){width:8%}.coreResearchTable th:nth-child(4){width:9%}.coreResearchTable th:nth-child(5){width:15%}.coreResearchTable th:nth-child(6){width:20%}.coreResearchTable th:nth-child(7){width:21%}
+.broadResearchTable th:nth-child(1){width:16%}.broadResearchTable th:nth-child(2){width:11%}.broadResearchTable th:nth-child(3){width:7%}.broadResearchTable th:nth-child(4){width:9%}.broadResearchTable th:nth-child(5){width:14%}.broadResearchTable th:nth-child(6){width:17%}.broadResearchTable th:nth-child(7){width:26%}
+.coreCoverageWrap,.broadTableWrap{overflow-x:auto;border:1px solid #d9dee4}
+.coreCoverageWrap .researchTable,.broadTableWrap .researchTable{min-width:980px}
+.emptyState{padding:18px 10px;color:#77828e;font-size:10.5px}
+
+.staticFund{display:block;padding:1px 0}
+.staticFund .fundmain{font-size:10.1px}
+.staticFund .fundsub{font-size:8.8px}
+.staticFund .vpos{color:#19724d}.staticFund .vneg{color:#ad3f44}
+.valn .infoTarget{min-width:78px}
+.fundn{min-width:96px}
+.infoTarget{border-bottom:1px dotted #a7b0ba}
+.infoGlyph{width:12px;height:12px;font-size:7.5px}
+
+.catalystRow td{padding:5px 8px 7px!important;background:#fcfaf6!important;border-bottom:1px solid #e6e9ed!important;color:#58616c!important}
+.catalystRow a{color:#315f88;text-decoration:none}.catalystRow a:hover{text-decoration:underline}
+
+#overview.section{border-color:#c8d0d8}
+.takeaways{grid-template-columns:repeat(4,1fr)}
+.take{font-size:11px;line-height:1.5}
+.grid2{grid-template-columns:1.18fr 1fr}
+.internalGrid{grid-template-columns:repeat(4,1fr)}
+.internalCard{background:#fbfcfd;border:1px solid #d8dde3;border-top-width:2px!important}
+
+.matrix{font-size:10.8px}
+.matrix th{font-size:8.4px;background:#eef2f5;border-bottom-color:#cfd6dd}
+.matrix td{font-size:10.7px}
+.matrix tbody tr:hover td{background:#f7f9fb}
+.calCard{border-radius:2px;box-shadow:none}.calTop{background:#f5f7f9}
+
+.flowNode,.branchCard,.storyAfterPane,.storySummaryBox{border-radius:2px;box-shadow:none}
+.flowNode{background:#fbfcfd}.branchCard{background:#fff}.endNode{background:#f5f7f9}
+.storySummaryBox{background:#f4f7f9;border-left-width:3px}
+.detailPopover{border-radius:2px;box-shadow:0 14px 38px rgba(22,37,52,.18)}
+.detailSection{background:#fff}.detailSectionTitle{background:#eef2f5}
+.detailNote{background:#f4f7f9}
+
+@media(max-width:1180px){
+ .takeaways{grid-template-columns:1fr 1fr}
+ .grid2,.grid3,.gridAlloc{grid-template-columns:1fr}
+ .internalGrid{grid-template-columns:1fr 1fr}
+ .researchTable thead th{top:41px}
+}
+@media(max-width:720px){
+ .takeaways{grid-template-columns:1fr}
+ .internalGrid{grid-template-columns:1fr 1fr}
+ .coreCoverageWrap .researchTable,.broadTableWrap .researchTable{min-width:900px}
+}
 </style>
 </head>
 <body>
