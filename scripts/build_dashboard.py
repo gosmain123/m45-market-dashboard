@@ -1425,7 +1425,7 @@ def treasury_auctions():
             'term':term,
             'security_type':r.get('securityType'),
             'amount':amount,
-            'long_end':any(x in term for x in ('10-Year','20-Year','30-Year'))
+            'long_end':bool(re.match(r'^(?:9|10|19|20|29|30)-Year',term))
         })
     return sorted(out,key=lambda x:(x['date'],x['time']))
 
