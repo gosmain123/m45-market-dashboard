@@ -2,6 +2,10 @@ name: Refresh market dashboard
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'site/data/dashboard.json'
   schedule:
     # Singapore time:
     # 06:30 SGT Mon-Fri (22:30 UTC Sun-Thu)
