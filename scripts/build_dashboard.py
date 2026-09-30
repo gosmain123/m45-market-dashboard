@@ -19,7 +19,7 @@ SGT = ZoneInfo("Asia/Singapore")
 NY_TZ = ZoneInfo("America/New_York")
 UTC = ZoneInfo("UTC")
 UA = {
-    "User-Agent": "M45MorningDashboard/1.0 contact=personal-dashboard"
+    "User-Agent": "MarketDashboard/1.0 contact=personal-dashboard"
 }
 CACHE_SECONDS = 0
 
