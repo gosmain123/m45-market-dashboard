@@ -216,6 +216,8 @@ def history_metrics(h, symbol=None):
     five_year=by_years(5)
 
     latest_date=latest_ts.to_pydatetime()
+    first_date=pd.Timestamp(df.date.iloc[0]).to_pydatetime()
+    since_start=pct_change(latest,float(closes.iloc[0]))
     jan1=pd.Timestamp(datetime(latest_date.year,1,1,tzinfo=UTC))
     prior_year=df[df.date < jan1]
     if len(prior_year):
@@ -245,6 +247,8 @@ def history_metrics(h, symbol=None):
         '1y':one_year,
         '3y':three_year,
         '5y':five_year,
+        'since_start':since_start,
+        'history_start':first_date.date().isoformat(),
         'ytd':ytd,
         'vol60':vol,
         'asof':latest_date.date().isoformat(),
@@ -1757,7 +1761,7 @@ def stock_monitor_pack():
                 if category!='Company / sector news':
                     expl=f'{category}: {news[0]["title"]}'
                     link=news[0]['link']; conf='Headline-linked'
-        row={'symbol':sym,'display':sym.replace('.KS',''),'company':company,'group':group,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'6m':m.get('6m'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'relative':rel,'score':score,'material':flag,'explanation':expl,'link':link,'confidence':conf,'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,merge_valuation(valuations.get(sym),core_details.get(sym)))}
+        row={'symbol':sym,'display':sym.replace('.KS',''),'company':company,'group':group,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'6m':m.get('6m'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'since_start':m.get('since_start'),'history_start':m.get('history_start'),'relative':rel,'score':score,'material':flag,'explanation':expl,'link':link,'confidence':conf,'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,merge_valuation(valuations.get(sym),core_details.get(sym)))}
         core.append(row)
         if flag: material.append(row)
     rank={g:i for i,g in enumerate(CORE_GROUP_ORDER)}
