@@ -138,7 +138,7 @@ def pct_change(a,b):
     return None if a is None or b in (None,0) else (a/b-1.0)*100.0
 
 # ---------------- YAHOO HISTORY ----------------
-def yahoo_history(symbol: str, range_: str='2y'):
+def yahoo_history(symbol: str, range_: str='10y'):
     """
     Best-effort public Yahoo chart feed.
 
@@ -204,7 +204,18 @@ def history_metrics(h, symbol=None):
     three_month=by_sessions(63)
     six_month=by_sessions(126)
 
-    latest_date=pd.Timestamp(df.date.iloc[-1]).to_pydatetime()
+    latest_ts=pd.Timestamp(df.date.iloc[-1])
+    def by_years(years):
+        target=latest_ts-pd.DateOffset(years=years)
+        prior=df[df.date<=target]
+        if not len(prior):
+            return None
+        return pct_change(latest,float(prior.iloc[-1].close))
+    one_year=by_years(1)
+    three_year=by_years(3)
+    five_year=by_years(5)
+
+    latest_date=latest_ts.to_pydatetime()
     jan1=pd.Timestamp(datetime(latest_date.year,1,1,tzinfo=UTC))
     prior_year=df[df.date < jan1]
     if len(prior_year):
@@ -231,6 +242,9 @@ def history_metrics(h, symbol=None):
         '1m':one_month,
         '3m':three_month,
         '6m':six_month,
+        '1y':one_year,
+        '3y':three_year,
+        '5y':five_year,
         'ytd':ytd,
         'vol60':vol,
         'asof':latest_date.date().isoformat(),
@@ -852,7 +866,7 @@ def tactical_signals(histories, regime, etf_lens=None):
         comps={'Trend':50*trend,'Relative':25*rel,'Macro':25*macro}
         top=max(comps,key=lambda k:abs(comps[k]))
         driver=f'{top} {"supportive" if comps[top]>=0 else "negative"}'
-        out.append({'symbol':sym,'name':name,'class':cls_,'view':view,'score':round(score,1),'1d':m.get('1d'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'vol':m.get('vol60'),'driver':driver,
+        out.append({'symbol':sym,'name':name,'class':cls_,'view':view,'score':round(score,1),'1d':m.get('1d'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'vol':m.get('vol60'),'driver':driver,
                     'trend':round(100*trend,1),'relative':round(100*rel,1),'macro':round(100*macro,1),'lens':(etf_lens or {}).get(sym,{})})
     return out
 
@@ -1390,7 +1404,7 @@ def factors_pack(hist,etf_lens=None):
     for sym,name in FACTOR_ETFS.items():
         m=hist.get(sym)
         if not m: continue
-        rows.append({'symbol':sym,'name':name,'1d':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'rel1m':(m.get('1m') or 0)-(sp.get('1m') or 0),'lens':(etf_lens or {}).get(sym,{})})
+        rows.append({'symbol':sym,'name':name,'1d':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'rel1m':(m.get('1m') or 0)-(sp.get('1m') or 0),'lens':(etf_lens or {}).get(sym,{})})
     return sorted(rows,key=lambda x:(x['1d'] if x['1d'] is not None else -999),reverse=True)
 
 def sectors_pack(hist,etf_lens=None):
@@ -1398,7 +1412,7 @@ def sectors_pack(hist,etf_lens=None):
     for sym,name in SECTOR_ETFS.items():
         m=hist.get(sym)
         if not m: continue
-        rows.append({'symbol':sym,'name':name,'1d':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'3m':m.get('3m'),'rel1m':(m.get('1m') or 0)-(sp.get('1m') or 0),'lens':(etf_lens or {}).get(sym,{})})
+        rows.append({'symbol':sym,'name':name,'1d':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'rel1m':(m.get('1m') or 0)-(sp.get('1m') or 0),'lens':(etf_lens or {}).get(sym,{})})
     return sorted(rows,key=lambda x:(x['1d'] if x['1d'] is not None else -999),reverse=True)
 
 def mover_score(m, relative):
@@ -1743,7 +1757,7 @@ def stock_monitor_pack():
                 if category!='Company / sector news':
                     expl=f'{category}: {news[0]["title"]}'
                     link=news[0]['link']; conf='Headline-linked'
-        row={'symbol':sym,'display':sym.replace('.KS',''),'company':company,'group':group,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'relative':rel,'score':score,'material':flag,'explanation':expl,'link':link,'confidence':conf,'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,merge_valuation(valuations.get(sym),core_details.get(sym)))}
+        row={'symbol':sym,'display':sym.replace('.KS',''),'company':company,'group':group,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'6m':m.get('6m'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'relative':rel,'score':score,'material':flag,'explanation':expl,'link':link,'confidence':conf,'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,merge_valuation(valuations.get(sym),core_details.get(sym)))}
         core.append(row)
         if flag: material.append(row)
     rank={g:i for i,g in enumerate(CORE_GROUP_ORDER)}
@@ -1755,7 +1769,7 @@ def stock_monitor_pack():
         if not m or m.get('1d') is None: continue
         rel=m['1d']-(b.get('1d') or 0) if b else None
         if abs(m['1d'])<3.0 and abs(rel or 0)<2.0: continue
-        broad_rows.append({'symbol':sym,'display':sym,'company':company,'sector':sector,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'relative':rel,'score':mover_score(m,rel),'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,valuations.get(sym))})
+        broad_rows.append({'symbol':sym,'display':sym,'company':company,'sector':sector,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'6m':m.get('6m'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'relative':rel,'score':mover_score(m,rel),'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,valuations.get(sym))})
     broad_rows.sort(key=lambda r:-r['score']); broad_rows=broad_rows[:10]
     broad_details=yahoo_fundamental_detail_pack({r['symbol'] for r in broad_rows})
     for r in broad_rows:
