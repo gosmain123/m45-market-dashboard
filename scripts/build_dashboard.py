@@ -16,7 +16,7 @@ import requests
 from bs4 import BeautifulSoup
 
 SGT = ZoneInfo("Asia/Singapore")
-ET = ZoneInfo("America/New_York")
+NY_TZ = ZoneInfo("America/New_York")
 UTC = ZoneInfo("UTC")
 UA = {
     "User-Agent": "M45MorningDashboard/1.0 contact=personal-dashboard"
@@ -295,7 +295,7 @@ def treasury_curve():
     return out
 
 def fred_history(series_id):
-    txt=req(f'https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}').text
+    txt=req(f'https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}', timeout=30).text
     df=pd.read_csv(StringIO(txt)); val=df.columns[-1]
     df[val]=pd.to_numeric(df[val],errors='coerce'); df['DATE']=pd.to_datetime(df['DATE'],errors='coerce')
     df=df.dropna(subset=[val,'DATE']).sort_values('DATE')
@@ -355,7 +355,7 @@ def parse_ics(text):
 
 def bls_calendar():
     keep={'Employment Situation':('NFP / Employment Situation','HIGH'),'Consumer Price Index':('CPI','HIGH'),'Producer Price Index':('PPI','MEDIUM'),'Job Openings and Labor Turnover Survey':('JOLTS','HIGH'),'Employment Cost Index':('ECI','MEDIUM')}
-    out=[]; now=datetime.now(ET)
+    out=[]; now=datetime.now(NY_TZ)
     for e in parse_ics(req('https://www.bls.gov/schedule/news_release/bls.ics').text):
         summary=e.get('SUMMARY',''); mapped=None
         for needle,v in keep.items():
@@ -363,13 +363,13 @@ def bls_calendar():
         if not mapped: continue
         dtline=next((v for k,v in e.items() if k.startswith('DTSTART')),None)
         if not dtline: continue
-        try: dt=datetime.strptime(dtline[:15],'%Y%m%dT%H%M%S').replace(tzinfo=ET) if 'T' in dtline else datetime.strptime(dtline[:8],'%Y%m%d').replace(hour=8,minute=30,tzinfo=ET)
+        try: dt=datetime.strptime(dtline[:15],'%Y%m%dT%H%M%S').replace(tzinfo=NY_TZ) if 'T' in dtline else datetime.strptime(dtline[:8],'%Y%m%d').replace(hour=8,minute=30,tzinfo=NY_TZ)
         except: continue
         if dt>=now-timedelta(hours=3): out.append((dt,mapped[0],mapped[1]))
     return out
 
 def bea_calendar():
-    out=[]; now=datetime.now(ET); yr=now.year
+    out=[]; now=datetime.now(NY_TZ); yr=now.year
     try: tables=pd.read_html(req('https://www.bea.gov/news/schedule/').text)
     except: return out
     for df in tables:
@@ -380,13 +380,13 @@ def bea_calendar():
             else: continue
             m=re.search(r'([A-Z][a-z]+)\s+(\d{1,2})\s+(\d{1,2}:\d{2})\s*(AM|PM)',txt)
             if not m: continue
-            try: dt=datetime.strptime(f'{m.group(1)} {m.group(2)} {yr} {m.group(3)} {m.group(4)}','%B %d %Y %I:%M %p').replace(tzinfo=ET)
+            try: dt=datetime.strptime(f'{m.group(1)} {m.group(2)} {yr} {m.group(3)} {m.group(4)}','%B %d %Y %I:%M %p').replace(tzinfo=NY_TZ)
             except: continue
             if dt>=now-timedelta(hours=3): out.append((dt,title,imp))
     return out
 
 def ism_calendar():
-    now=datetime.now(ET); out=[]
+    now=datetime.now(NY_TZ); out=[]
     for offset in range(4):
         month=(now.month-1+offset)%12+1; year=now.year+(now.month-1+offset)//12
         weekdays=[]; x=date(year,month,1)
@@ -395,25 +395,25 @@ def ism_calendar():
             x+=timedelta(days=1)
         manu=weekdays[1] if month==1 else weekdays[0]; serv=weekdays[3] if month==1 else weekdays[2]
         for dd,title in [(manu,'ISM Manufacturing PMI'),(serv,'ISM Services PMI')]:
-            dt=datetime(dd.year,dd.month,dd.day,10,0,tzinfo=ET)
+            dt=datetime(dd.year,dd.month,dd.day,10,0,tzinfo=NY_TZ)
             if dt>=now-timedelta(hours=3): out.append((dt,title,'HIGH'))
     return out
 
 def fomc_calendar():
-    now=datetime.now(ET); out=[]
+    now=datetime.now(NY_TZ); out=[]
     for yr,dates in FOMC_DECISIONS.items():
         for ds in dates:
-            dt=datetime.fromisoformat(ds).replace(hour=14,minute=0,tzinfo=ET)
+            dt=datetime.fromisoformat(ds).replace(hour=14,minute=0,tzinfo=NY_TZ)
             if dt>=now-timedelta(hours=3): out.append((dt,'FOMC Decision','HIGH'))
     return out
 
 def treasury_auctions():
-    out=[]; now=datetime.now(ET)
+    out=[]; now=datetime.now(NY_TZ)
     try: rows=req('https://www.treasurydirect.gov/TA_WS/securities/upcoming?format=json').json()
     except: return out
     for r in rows:
         if r.get('securityType') not in {'Note','Bond','TIPS'}: continue
-        try: dd=datetime.fromisoformat(r.get('auctionDate','')[:10]).replace(hour=13,minute=0,tzinfo=ET)
+        try: dd=datetime.fromisoformat(r.get('auctionDate','')[:10]).replace(hour=13,minute=0,tzinfo=NY_TZ)
         except: continue
         if dd<now-timedelta(hours=3): continue
         term=r.get('securityTerm',''); high=any(x in term for x in ['10-Year','20-Year','30-Year'])
