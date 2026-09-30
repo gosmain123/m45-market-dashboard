@@ -295,6 +295,45 @@ body{font-size:13.25px;line-height:1.38;letter-spacing:0;background:#eef1f4;colo
  .internalGrid{grid-template-columns:1fr 1fr}
  .coreCoverageWrap .researchTable,.broadTableWrap .researchTable{min-width:900px}
 }
+
+/* Stability pass after dense-data expansion */
+.equityStack{display:block}
+.equityStack>.section{width:100%}
+#crossAsset,#sectors,#factors,#signals{overflow-x:auto}
+.tableScroll{overflow-x:auto;overflow-y:visible}
+.crossAssetTable{min-width:1060px}
+.crossAssetTable th:nth-child(1){min-width:160px;text-align:left}
+.crossAssetTable th:nth-child(2){min-width:95px}
+.crossAssetTable th:nth-child(3){min-width:150px;text-align:left}
+.crossAssetTable td:nth-child(3){text-align:left}
+.headlineLens{display:flex;align-items:flex-start;gap:7px;min-width:130px}
+.headlineLens>span{display:block}
+.headlineLens small{display:block;color:#8a94a0;font-size:7.8px;line-height:1.2;margin-top:2px;white-space:nowrap}
+.researchTable{table-layout:auto}
+.researchTable thead th{position:static!important;top:auto!important}
+.coreCoverageWrap .researchTable{min-width:1080px}
+.broadTableWrap .researchTable{min-width:1100px}
+.matrix{table-layout:auto}
+.matrix th,.matrix td{white-space:nowrap}
+.matrix td.group{white-space:normal}
+#sectors .matrix{min-width:900px}
+#factors .matrix{min-width:820px}
+#allocation .matrix{min-width:1080px}
+#calendar .body{overflow:visible}
+.calMetricHead,.calMetric{grid-template-columns:minmax(170px,1.55fr) repeat(3,minmax(78px,.62fr))}
+.takeaways{align-items:stretch}
+.take p{line-height:1.48}
+.regime{grid-template-columns:1.15fr 1fr 1fr 1fr}
+.storylineWrap{overflow:visible}
+.detailPopover{z-index:5000}
+@media(max-width:1360px){
+ .regime{grid-template-columns:1fr 1fr}
+ .takeaways{grid-template-columns:1fr 1fr}
+}
+@media(max-width:900px){
+ .regime,.takeaways{grid-template-columns:1fr}
+ .calMetricHead,.calMetric{grid-template-columns:minmax(145px,1.4fr) repeat(3,minmax(66px,.6fr))}
+}
 </style>
 </head>
 <body>
@@ -335,7 +374,7 @@ body{font-size:13.25px;line-height:1.38;letter-spacing:0;background:#eef1f4;colo
 </section>
 </div>
 
-<div class="grid2" id="equities">
+<div class="equityStack" id="equities">
 <section class="section">
   <div class="sh"><div class="st">U.S. SECTOR LEADERSHIP</div><div class="sn">Sorted by today · relative strength vs S&P</div></div>
   <div class="body" id="sectors"></div>
@@ -406,6 +445,7 @@ function cls(x){return x>0?'pos':x<0?'neg':'neu'}
 function heat(x){return x>0.35?'heatp':x<-0.35?'heatn':''}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 const ASSET_SYMBOLS={spx:'^GSPC',nasdaq:'^IXIC',russell:'^RUT',sox:'^SOX',es:'ES=F',nq:'NQ=F',vix:'^VIX',stoxx50:'^STOXX50E',ftse:'^FTSE',nikkei:'^N225',kospi:'^KS11',hsi:'^HSI',csi300:'000300.SS',eem:'EEM',dxy:'DX-Y.NYB',usdjpy:'JPY=X',eurusd:'EURUSD=X',usdcnh:'CNH=X',brent:'BZ=F',wti:'CL=F',gold:'GC=F',copper:'HG=F',btc:'BTC-USD'};
+const ASSET_LENS_PROXY={spx:'SPY',nasdaq:'QQQ',russell:'IWM',sox:'SOXX',es:'SPY',nq:'QQQ',stoxx50:'FEZ',ftse:'EWU',nikkei:'EWJ',kospi:'EWY',hsi:'EWH',csi300:'ASHR',eem:'EEM'};
 function qurl(sym){return 'https://finance.yahoo.com/quote/'+encodeURIComponent(sym)}
 function qlink(sym,label,klass='assetLink'){return '<a class="'+klass+'" href="'+qurl(sym)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+'</a>'}
 function infoAttrs(kind,sym){
@@ -583,15 +623,22 @@ function curveName(c){let a=c['2Y']?.bp1d,b=c['10Y']?.bp1d,s=c['2s10s']?.bp1d||0
 function renderTakeaways(d){document.getElementById('takeaways').innerHTML=(d.takeaways||[]).map((x,i)=>`<div class="take"><b>${String(i+1).padStart(2,'0')}</b><p>${esc(x)}</p></div>`).join('')}
 
 function assetRows(d){
- const m=d.market||{}; let rows=[];
+ const m=d.market||{}, lens=d.etf_lens||{}; let rows=[];
  const groups=[
-  ['U.S. / Futures',[['spx','S&P 500','US close'],['nasdaq','Nasdaq','US close'],['russell','Russell 2000','US close'],['sox','SOX','US close'],['es','S&P 500 Futures','Live'],['nq','Nasdaq 100 Futures','Live'],['vix','VIX','US close']]],
-  ['Global Equities',[['stoxx50','Euro Stoxx 50','Prior close'],['ftse','FTSE 100','Prior close'],['nikkei','Nikkei 225','Asia live'],['kospi','KOSPI','Asia live'],['hsi','Hang Seng','Asia live'],['csi300','CSI 300','Asia live'],['eem','EM Equities ETF','US close']]],
-  ['FX',[['dxy','DXY','Live'],['usdjpy','USD/JPY','Live'],['eurusd','EUR/USD','Live'],['usdcnh','USD/CNH','Live']]],
-  ['Commodities / Crypto',[['brent','Brent','Live'],['wti','WTI','Live'],['gold','Gold','Live'],['copper','Copper','Live'],['btc','Bitcoin','24H']]]
+  ['U.S. / Futures',[['spx','S&P 500'],['nasdaq','Nasdaq'],['russell','Russell 2000'],['sox','SOX'],['es','S&P 500 Futures'],['nq','Nasdaq 100 Futures'],['vix','VIX']]],
+  ['Global Equities',[['stoxx50','Euro Stoxx 50'],['ftse','FTSE 100'],['nikkei','Nikkei 225'],['kospi','KOSPI'],['hsi','Hang Seng'],['csi300','CSI 300'],['eem','EM Equities ETF']]],
+  ['FX',[['dxy','DXY'],['usdjpy','USD/JPY'],['eurusd','EUR/USD'],['usdcnh','USD/CNH']]],
+  ['Commodities / Crypto',[['brent','Brent'],['wti','WTI'],['gold','Gold'],['copper','Copper'],['btc','Bitcoin']]]
  ];
- for(const [g,arr] of groups){rows.push(`<tr><td class="group" colspan="8">${g}</td></tr>`);for(const [k,label,session] of arr){let x=m[k]||{};rows.push(`<tr><td>${ASSET_SYMBOLS[k]?qlink(ASSET_SYMBOLS[k],label):esc(label)}</td><td>${session}</td><td>${priceFmt(k,x.price)}</td>${['1d','1w','1m','ytd'].map(z=>`<td class="${cls(x[z])} ${heat(x[z])}">${pct(x[z])}</td>`).join('')}<td>${x.vol60!==undefined&&x.vol60!==null?n(x.vol60,1)+'%':'—'}</td></tr>`)}}
- document.getElementById('crossAsset').innerHTML=`<table class="matrix"><thead><tr><th>Asset</th><th>Session</th><th>Level</th><th>1D</th><th>1W</th><th>1M</th><th>YTD</th><th>60D vol</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+ for(const [g,arr] of groups){
+   rows.push('<tr><td class="group" colspan="8">'+g+'</td></tr>');
+   for(const [k,label] of arr){
+     const x=m[k]||{}, proxy=ASSET_LENS_PROXY[k], l=proxy?lens[proxy]:null;
+     const lensCell=l?('<div class="headlineLens"><span>'+etfLensHTML(l,proxy)+'</span><small>'+esc(proxy)+' proxy</small></div>'):'—';
+     rows.push('<tr><td>'+(ASSET_SYMBOLS[k]?qlink(ASSET_SYMBOLS[k],label):esc(label))+'</td><td>'+priceFmt(k,x.price)+'</td><td>'+lensCell+'</td>'+['1d','1w','1m','ytd'].map(z=>'<td class="'+cls(x[z])+' '+heat(x[z])+'">'+pct(x[z])+'</td>').join('')+'<td>'+(x.vol60!==undefined&&x.vol60!==null?n(x.vol60,1)+'%':'—')+'</td></tr>');
+   }
+ }
+ document.getElementById('crossAsset').innerHTML='<div class="tableScroll"><table class="matrix crossAssetTable"><thead><tr><th>Asset</th><th>Level</th><th>Valuation / Proxy</th><th>1D</th><th>1W</th><th>1M</th><th>YTD</th><th>60D vol</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
 }
 function renderRates(d){
  const c=d.curve||{}, f=d.fred||{}, a=d.acm||{}, be=d.breakeven||{};
