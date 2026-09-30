@@ -1171,33 +1171,67 @@ def build_commentary(payload):
             'third ask whether credit confirms the risk move; fourth use the dollar and commodities to classify the macro impulse; fifth check whether the single-name tape agrees with the sector story; and finally map the next catalyst to the asset that should react first. '
             'If those pieces line up, conviction is high. If they conflict, keep the interpretation conditional rather than forcing one narrative.')
 
-    # Connected daily storyline: one main spine, with explicit branches where the tape diverges.
-    if None not in (y2,y10) and y2<0<y10:
-        story_start={
-          'kicker':'STARTING POINT · RATES',
-          'title':'The front end eased, but the long end sold off',
-          'body':f'2Y moved {bps(y2)} while 10Y moved {bps(y10)} and 30Y {bps(y30)}. That immediately argues against a simple “Fed turned more hawkish” explanation and shifts the first question to long-duration compensation: real yields, inflation compensation and term premium.',
-          'tone':'warning'
-        }
-    elif brent is not None and abs(brent)>=2 and y10 is not None and y10>0:
-        story_start={
-          'kicker':'STARTING POINT · INFLATION',
-          'title':'The first pressure point was inflation-sensitive markets',
-          'body':f'Brent moved {pct(brent)} while the 10Y rose {bps(y10)}. That combination raises the nominal discount rate and keeps the inflation tail alive, so long-duration assets need stronger earnings or theme support to offset the macro drag.',
-          'tone':'warning'
-        }
-    elif None not in (sox,ndx) and abs(sox-ndx)>=1:
-        story_start={
-          'kicker':'STARTING POINT · EQUITY LEADERSHIP',
-          'title':'The index hid a much bigger leadership split underneath',
-          'body':f'SOX moved {pct(sox)} versus Nasdaq {pct(ndx)}. The first useful read was therefore not “stocks up or down,” but whether the market was rewarding a specific AI / semiconductor theme or a broad growth impulse.',
-          'tone':'supportive' if sox>ndx else 'warning'
-        }
+    # Connected daily storyline: choose the strongest observed dislocation as the opening node.
+    hyig0=(cp.get('hy_vs_ig') or {}).get('1d')
+    candidates=[]
+
+    if None not in (y2,y10):
+        rate_score=max(abs(y2 or 0),abs(y10 or 0),abs(y30 or 0))/4.0
+        if y2<0<y10 or y2>0>y10: rate_score+=0.75
+        if y2<0<y10:
+            rt='The front end eased, but the long end sold off'
+            rb=f'2Y moved {bps(y2)} while 10Y moved {bps(y10)} and 30Y {bps(y30)}. That points away from a simple Fed-path story and toward longer-duration compensation: real yields, inflation compensation and term premium.'
+            tone='warning'
+        elif y2>0 and y10>0:
+            rt='Rates repriced higher across the curve'
+            rb=f'2Y moved {bps(y2)}, 10Y {bps(y10)} and 30Y {bps(y30)}. The first question is whether the move is mostly policy repricing, long-end term premium, or both.'
+            tone='warning'
+        elif y2<0 and y10<0:
+            rt='Rates eased across the curve'
+            rb=f'2Y moved {bps(y2)}, 10Y {bps(y10)} and 30Y {bps(y30)}. Lower discount rates create a valuation tailwind; the next test is whether equity breadth and cyclical assets confirm it.'
+            tone='supportive'
+        else:
+            rt='The Treasury curve twisted rather than moving in parallel'
+            rb=f'2Y moved {bps(y2)}, 10Y {bps(y10)} and 30Y {bps(y30)}. A non-parallel move means the market is separating the Fed path from longer-duration risk.'
+            tone='mixed'
+        candidates.append((rate_score,{'kicker':'STARTING POINT · RATES','title':rt,'body':rb,'tone':tone}))
+
+    if None not in (sox,ndx):
+        eqdiff=sox-ndx
+        eq_score=max(abs(eqdiff)/0.75,abs(spx or 0)/1.0)
+        if abs(eqdiff)>=0.50:
+            et='Semiconductors broke away from the headline index'
+            eb=f'SOX moved {pct(sox)} versus Nasdaq {pct(ndx)}. That gap is large enough to treat leadership as a separate signal rather than broad beta.'
+            tone='supportive' if eqdiff>0 else 'warning'
+        else:
+            et='Equity direction was more important than sector divergence'
+            eb=f'S&P moved {pct(spx)}, Nasdaq {pct(ndx)} and SOX {pct(sox)}. Leadership dispersion was modest, so breadth and rates become the better explanatory variables.'
+            tone='supportive' if (spx or 0)>0 else 'warning' if (spx or 0)<0 else 'mixed'
+        candidates.append((eq_score,{'kicker':'STARTING POINT · EQUITIES','title':et,'body':eb,'tone':tone}))
+
+    macro_score=0.0
+    if brent is not None: macro_score=max(macro_score,abs(brent)/2.0)
+    if dxy is not None: macro_score=max(macro_score,abs(dxy)/0.5)
+    if None not in (gold,copper): macro_score=max(macro_score,abs(gold-copper)/1.0)
+    if macro_score>=0.85:
+        mt='Commodities and FX delivered the strongest macro cross-check'
+        mb=f'DXY moved {pct(dxy)}, Brent {pct(brent)}, gold {pct(gold)} and copper {pct(copper)}. The key question is whether that mix reinforces inflation, growth, or defensive demand.'
+        tone='warning' if ((brent or 0)>1 or ((gold or 0)-(copper or 0)>1)) else 'supportive' if ((copper or 0)-(gold or 0)>1) else 'mixed'
+        candidates.append((macro_score,{'kicker':'STARTING POINT · MACRO','title':mt,'body':mb,'tone':tone}))
+
+    if hyig0 is not None and abs(hyig0)>=0.20:
+        cr_score=abs(hyig0)/0.20
+        ct='Credit beta diverged enough to matter'
+        cb=f'HYG versus LQD was {hyig0:+.2f}% on the latest session. That makes credit a genuine confirmation test rather than a background datapoint.'
+        candidates.append((cr_score,{'kicker':'STARTING POINT · CREDIT','title':ct,'body':cb,'tone':'warning' if hyig0<0 else 'supportive'}))
+
+    if candidates:
+        story_start=max(candidates,key=lambda x:x[0])[1]
     else:
         story_start={
           'kicker':'STARTING POINT · CROSS-ASSET',
-          'title':'The day began as a mixed cross-asset signal',
-          'body':f'S&P {pct(spx)}, Nasdaq {pct(ndx)}, SOX {pct(sox)} and 10Y {bps(y10)} did not line up into one clean risk-on / risk-off message. The right starting point is therefore to trace which markets confirmed each other and which did not.',
+          'title':'No single market dominated the tape',
+          'body':f'S&P {pct(spx)}, Nasdaq {pct(ndx)}, SOX {pct(sox)} and 10Y {bps(y10)} did not produce one dominant dislocation. The useful read is therefore the pattern of confirmations across breadth, rates, credit and macro assets.',
           'tone':'mixed'
         }
 
@@ -1287,13 +1321,28 @@ def build_commentary(payload):
         macro_state='warning'; macro_text+=' Gold outperforming copper leans more defensive.'
     story_branches.append({'title':'Macro branch · inflation, growth or hedge demand?','body':macro_text,'tone':macro_state,'tag':'CROSS-ASSET'})
 
+    # Keep the format adaptive: equities and rates are anchors; credit / macro appear only when material.
+    adaptive=[]
+    for br in story_branches:
+        tag=br.get('tag')
+        if tag in {'EQUITIES','RATES'}:
+            adaptive.append(br)
+        elif tag=='CREDIT':
+            if hyig is not None and (abs(hyig)>=0.15 or abs(hyig1m or 0)>=0.75):
+                adaptive.append(br)
+        elif tag=='CROSS-ASSET':
+            macro_material=(abs(brent or 0)>=1.5 or abs(dxy or 0)>=0.5 or (gold is not None and copper is not None and abs(gold-copper)>=1.0))
+            if macro_material:
+                adaptive.append(br)
+    story_branches=adaptive
+
     if y2 is not None and y10 is not None and y2<0<y10 and None not in (sox,ndx) and sox>ndx+0.75:
         resolution_title='The day landed on a split regime: long-end macro pressure, but concentrated AI strength'
         resolution_body=('The branches do not fully converge into either risk-on or risk-off. Long-duration rates remain a headwind, yet semiconductor leadership shows that the market is still willing to pay for visible AI / compute earnings. '
                          'That makes breadth and same-day HYG-versus-LQD performance the immediate tie-breakers: broader equity participation plus resilient high yield would support expansion of the theme; weaker breadth plus HY underperformance would make concentrated leadership more fragile.')
-    elif None not in (hy,ccc) and hy>0 and ccc>hy and spx is not None and spx<0:
+    elif hyig is not None and hyig<-0.35 and spx is not None and spx<0:
         resolution_title='The day finished as a broader risk-off move'
-        resolution_body=('Equity weakness was accompanied by worsening lower-quality credit, so the signal moved beyond valuation alone. The market was asking for more compensation for both duration and balance-sheet risk.')
+        resolution_body=('Equity weakness was accompanied by meaningful high-yield underperformance versus investment grade, so the signal moved beyond valuation alone. The market was asking for more compensation for both duration and balance-sheet risk.')
     elif risk>=25:
         resolution_title='The day finished constructive, but confirmation still matters'
         resolution_body=('Risk appetite stayed positive overall. The strongest version of this story would require small caps, equal weight and credit to participate rather than leaving the rally concentrated in a few large themes.')
