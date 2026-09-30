@@ -1,4 +1,4 @@
-# M45 Morning Dashboard — Production Specification
+# Market Dashboard — Production Specification
 
 ## 1. Architecture
 
