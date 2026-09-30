@@ -893,12 +893,19 @@ def top_takeaways(payload):
     # 4 mover — only show a stock-specific takeaway when a catalyst is actually supported.
     if movers and movers[0].get('explanation'):
         out.append(f'{movers[0]["display"]} {movers[0]["move"]:+.2f}% — {movers[0]["explanation"]}')
-    # 5 allocation
-    ow=[x for x in sig if x['view']=='OVERWEIGHT']; uw=[x for x in sig if x['view']=='UNDERWEIGHT']
-    if ow or uw:
-        a=', '.join(x['name'] for x in sorted(ow,key=lambda z:-z['score'])[:2]) or 'none'
-        b=', '.join(x['name'] for x in sorted(uw,key=lambda z:z['score'])[:2]) or 'none'
-        out.append(f'Systematic tactical tilt: strongest OW — {a}; strongest UW — {b}.')
+    # 5 next catalyst — more useful in the morning header than repeating tactical allocation.
+    cal=payload.get('calendar',[])
+    nxt=next((e for e in cal if e.get('status')!='RELEASED'),None)
+    if nxt:
+        detail=''
+        mets=nxt.get('metrics') or []
+        if mets:
+            m0=mets[0]
+            if m0.get('consensus'):
+                detail=f" · {m0.get('name')}: cons. {m0.get('consensus')}"
+            elif m0.get('forecast'):
+                detail=f" · {m0.get('name')}: model f/c {m0.get('forecast')}"
+        out.append(f"Next catalyst: {nxt.get('title')} · {nxt.get('date')} {nxt.get('time')} SGT{detail}.")
     return out[:4]
 
 
@@ -1392,15 +1399,45 @@ def stock_monitor_pack():
                 r['link']=news[0]['link']; r['confidence']='Headline-linked'
     return {'core_tape':core,'core_movers':material[:14],'broad_movers':broad_rows}
 
+
+def treasury_auctions():
+    """Upcoming Treasury Note/Bond/TIPS auctions for the rates panel only."""
+    out=[]; now=datetime.now(NY_TZ)
+    try:
+        rows=req('https://www.treasurydirect.gov/TA_WS/securities/upcoming?format=json',timeout=12).json()
+    except Exception:
+        return out
+    for r in rows:
+        if r.get('securityType') not in {'Note','Bond','TIPS'}:
+            continue
+        try:
+            dd=datetime.fromisoformat((r.get('auctionDate') or '')[:10]).replace(hour=13,minute=0,tzinfo=NY_TZ)
+        except:
+            continue
+        if dd < now-timedelta(hours=3):
+            continue
+        term=r.get('securityTerm','')
+        amount=fnum(r.get('offeringAmount'))
+        s=dd.astimezone(SGT)
+        out.append({
+            'date':s.strftime('%a, %d %b'),
+            'time':s.strftime('%H:%M'),
+            'term':term,
+            'security_type':r.get('securityType'),
+            'amount':amount,
+            'long_end':any(x in term for x in ('10-Year','20-Year','30-Year'))
+        })
+    return sorted(out,key=lambda x:(x['date'],x['time']))
+
 def fed_pack():
-    funcs={'curve':treasury_curve,'fred':fred_pack,'acm':acm_term_premium,'cvol':cme_cvol,'fedwatch':fedwatch,'calendar':major_calendar}
+    funcs={'curve':treasury_curve,'fred':fred_pack,'acm':acm_term_premium,'cvol':cme_cvol,'fedwatch':fedwatch,'calendar':major_calendar,'auctions':treasury_auctions}
     out={}
-    with ThreadPoolExecutor(max_workers=6) as ex:
+    with ThreadPoolExecutor(max_workers=7) as ex:
         futs={ex.submit(fn):k for k,fn in funcs.items()}
         for fut in as_completed(futs):
             k=futs[fut]
             try: out[k]=fut.result()
-            except Exception as e: out[k]=[] if k=='calendar' else {'error':str(e)}
+            except Exception as e: out[k]=[] if k in {'calendar','auctions'} else {'error':str(e)}
     return out
 
 def build_dashboard():
@@ -1437,7 +1474,7 @@ def build_dashboard():
       'hy_vs_ig':{'1d':relret(hyg,lqd,'1d'),'1m':relret(hyg,lqd,'1m'),'asof':hyg.get('asof') or lqd.get('asof')},
       'hy_vs_tsy':{'1d':relret(hyg,ief,'1d'),'1m':relret(hyg,ief,'1m'),'asof':hyg.get('asof') or ief.get('asof')}
     }
-    payload={'market':market,'curve':curve,'fred':fred,'credit_proxy':credit_proxy,'acm':fp.get('acm',{}),'cvol':fp.get('cvol',{}),'fedwatch':fp.get('fedwatch',{}),'calendar':fp.get('calendar',[]),
+    payload={'market':market,'curve':curve,'fred':fred,'credit_proxy':credit_proxy,'acm':fp.get('acm',{}),'cvol':fp.get('cvol',{}),'fedwatch':fp.get('fedwatch',{}),'calendar':fp.get('calendar',[]),'auctions':fp.get('auctions',[]),
              'movers':movers,'core_tape':core_tape,'broad_movers':broad_movers,'sectors':sectors,'factors':factors,'signals':signals,'regime':regime,'breakeven':breakeven}
     payload['takeaways']=top_takeaways(payload)
     payload['commentary']=build_commentary(payload)
