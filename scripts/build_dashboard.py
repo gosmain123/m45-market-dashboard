@@ -458,87 +458,349 @@ def parse_ics(text):
             k,v=ln.split(':',1); cur[k]=v
     return events
 
-def bls_calendar():
-    keep={'Employment Situation':('NFP / Employment Situation','HIGH'),'Consumer Price Index':('CPI','HIGH'),'Producer Price Index':('PPI','MEDIUM'),'Job Openings and Labor Turnover Survey':('JOLTS','HIGH'),'Employment Cost Index':('ECI','MEDIUM')}
-    out=[]; now=datetime.now(NY_TZ)
-    for e in parse_ics(req('https://www.bls.gov/schedule/news_release/bls.ics').text):
-        summary=e.get('SUMMARY',''); mapped=None
-        for needle,v in keep.items():
-            if needle.lower() in summary.lower(): mapped=v; break
-        if not mapped: continue
-        dtline=next((v for k,v in e.items() if k.startswith('DTSTART')),None)
-        if not dtline: continue
-        try: dt=datetime.strptime(dtline[:15],'%Y%m%dT%H%M%S').replace(tzinfo=NY_TZ) if 'T' in dtline else datetime.strptime(dtline[:8],'%Y%m%d').replace(hour=8,minute=30,tzinfo=NY_TZ)
-        except: continue
-        if dt>=now-timedelta(hours=3): out.append((dt,mapped[0],mapped[1]))
-    return out
 
-def bea_calendar():
-    out=[]; now=datetime.now(NY_TZ); yr=now.year
-    try: tables=pd.read_html(req('https://www.bea.gov/news/schedule/').text)
-    except: return out
-    for df in tables:
-        for _,row in df.astype(str).iterrows():
-            txt=' | '.join(row.tolist()); lo=txt.lower()
-            if 'personal income and outlays' in lo: title='PCE / Personal Income & Outlays'; imp='HIGH'
-            elif 'gdp' in lo and ('estimate' in lo or 'gross domestic product' in lo): title='GDP'; imp='HIGH'
-            else: continue
-            m=re.search(r'([A-Z][a-z]+)\s+(\d{1,2})\s+(\d{1,2}:\d{2})\s*(AM|PM)',txt)
-            if not m: continue
-            try: dt=datetime.strptime(f'{m.group(1)} {m.group(2)} {yr} {m.group(3)} {m.group(4)}','%B %d %Y %I:%M %p').replace(tzinfo=NY_TZ)
+CALENDAR_GROUPS = {
+    'PCE Inflation': {
+        'source':'BEA','importance':'HIGH',
+        'detail_url':'https://www.bea.gov/data/personal-consumption-expenditures-price-index'
+    },
+    'GDP': {
+        'source':'BEA','importance':'HIGH',
+        'detail_url':'https://www.bea.gov/data/gdp/gross-domestic-product'
+    },
+    'CPI Inflation': {
+        'source':'BLS','importance':'HIGH',
+        'detail_url':'https://www.bls.gov/cpi/'
+    },
+    'PPI Inflation': {
+        'source':'BLS','importance':'HIGH',
+        'detail_url':'https://www.bls.gov/ppi/'
+    },
+    'Jobs Report': {
+        'source':'BLS','importance':'HIGH',
+        'detail_url':'https://www.bls.gov/news.release/empsit.toc.htm'
+    },
+    'JOLTS': {
+        'source':'BLS','importance':'HIGH',
+        'detail_url':'https://www.bls.gov/jlt/'
+    },
+    'ISM Manufacturing': {
+        'source':'ISM','importance':'HIGH',
+        'detail_url':'https://www.ismworld.org/supply-management-news-and-reports/reports/ism-report-on-business/'
+    },
+    'ISM Services': {
+        'source':'ISM','importance':'HIGH',
+        'detail_url':'https://www.ismworld.org/supply-management-news-and-reports/reports/ism-report-on-business/'
+    },
+    'Retail Sales': {
+        'source':'Census','importance':'HIGH',
+        'detail_url':'https://www.census.gov/retail/index.html'
+    },
+    'ADP Employment': {
+        'source':'ADP','importance':'MEDIUM',
+        'detail_url':'https://adpemploymentreport.com/'
+    },
+    'FOMC Decision': {
+        'source':'Federal Reserve','importance':'HIGH',
+        'detail_url':'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm'
+    },
+}
+
+CALENDAR_METRICS = [
+    (r'^Core PCE Price Index MoM\b','PCE Inflation','Core PCE MoM',1),
+    (r'^Core PCE Price Index YoY\b','PCE Inflation','Core PCE YoY',2),
+    (r'^PCE Price Index MoM\b','PCE Inflation','Headline PCE MoM',3),
+    (r'^PCE Price Index YoY\b','PCE Inflation','Headline PCE YoY',4),
+
+    (r'^GDP Growth Rate QoQ','GDP','Real GDP QoQ SAAR',1),
+    (r'^GDP Price Index QoQ','GDP','GDP Price Index',2),
+
+    (r'^Non Farm Payrolls\b','Jobs Report','Nonfarm Payrolls',1),
+    (r'^Unemployment Rate\b','Jobs Report','Unemployment Rate',2),
+    (r'^Average Hourly Earnings MoM\b','Jobs Report','Average Hourly Earnings MoM',3),
+    (r'^Average Hourly Earnings YoY\b','Jobs Report','Average Hourly Earnings YoY',4),
+
+    (r'^JOLTs Job Openings\b','JOLTS','Job Openings',1),
+
+    (r'^ISM Manufacturing PMI\b','ISM Manufacturing','Headline PMI',1),
+    (r'^ISM Manufacturing New Orders\b','ISM Manufacturing','New Orders',2),
+    (r'^ISM Manufacturing Prices\b','ISM Manufacturing','Prices Paid',3),
+    (r'^ISM Manufacturing Employment\b','ISM Manufacturing','Employment',4),
+
+    (r'^ISM Services PMI\b','ISM Services','Headline PMI',1),
+    (r'^ISM Services New Orders\b','ISM Services','New Orders',2),
+    (r'^ISM Services Prices\b','ISM Services','Prices Paid',3),
+    (r'^ISM Services Employment\b','ISM Services','Employment',4),
+
+    (r'^Core Inflation Rate MoM\b','CPI Inflation','Core CPI MoM',1),
+    (r'^Core Inflation Rate YoY\b','CPI Inflation','Core CPI YoY',2),
+    (r'^Inflation Rate MoM\b','CPI Inflation','Headline CPI MoM',3),
+    (r'^Inflation Rate YoY\b','CPI Inflation','Headline CPI YoY',4),
+
+    (r'^Core PPI MoM\b','PPI Inflation','Core PPI MoM',1),
+    (r'^Core PPI YoY\b','PPI Inflation','Core PPI YoY',2),
+    (r'^PPI MoM\b','PPI Inflation','Headline PPI MoM',3),
+    (r'^PPI YoY\b','PPI Inflation','Headline PPI YoY',4),
+
+    (r'^Retail Sales MoM\b','Retail Sales','Headline Retail Sales MoM',1),
+    (r'^Retail Sales Ex Autos MoM\b','Retail Sales','Ex-Autos MoM',2),
+    (r'^Retail Sales Control Group MoM\b','Retail Sales','Control Group MoM',3),
+
+    (r'^ADP Employment Change\b','ADP Employment','ADP Employment Change',1),
+    (r'^(?:Fed Interest Rate Decision|Federal Funds Rate)\b','FOMC Decision','Fed Funds Target',1),
+]
+
+def _calendar_metric_spec(name):
+    clean=re.sub(r'\s+',' ',str(name or '')).strip()
+    for pat,group,metric,priority in CALENDAR_METRICS:
+        if re.search(pat,clean,re.I):
+            return group,metric,priority
+    return None
+
+def _clean_calendar_value(x):
+    x=re.sub(r'\s+',' ',str(x or '')).strip()
+    x=x.replace('®','').replace('Â','').strip()
+    return '' if x in {'','-','—','nan','None'} else x
+
+def _calendar_surprise(actual,consensus):
+    a=_clean_calendar_value(actual); b=_clean_calendar_value(consensus)
+    if not a or not b: return ''
+    def parse(v):
+        m=re.search(r'([-+]?\d+(?:\.\d+)?)\s*(%|K|M|B|T)?',v,re.I)
+        return (float(m.group(1)),(m.group(2) or '')) if m else (None,'')
+    av,au=parse(a); bv,bu=parse(b)
+    if av is None or bv is None or au.upper()!=bu.upper(): return ''
+    diff=av-bv; unit=au.upper()
+    if unit=='%':
+        return f'{diff:+.1f}pp'
+    if unit in {'K','M','B','T'}:
+        return f'{diff:+.1f}{unit}'
+    return f'{diff:+.1f}'
+
+def _te_calendar_rows():
+    """Selected U.S. macro events from the public Trading Economics calendar page."""
+    now=sgt_now()
+    d1=(now.date()-timedelta(days=2)).isoformat()
+    d2=(now.date()+timedelta(days=45)).isoformat()
+    urls=[
+        f'https://tradingeconomics.com/united-states/calendar?from={d1}&to={d2}',
+        f'https://tradingeconomics.com/calendar?from={d1}&to={d2}&countries=United%20States'
+    ]
+    headers={
+        'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153 Safari/537.36',
+        'Accept-Language':'en-US,en;q=0.9'
+    }
+    last_error=None
+    for url in urls:
+        try:
+            html=req(url,timeout=18,headers=headers).text
+            soup=BeautifulSoup(html,'html.parser')
+            current_date=None; rows=[]
+            for tr in soup.find_all('tr'):
+                txt=re.sub(r'\s+',' ',tr.get_text(' ',strip=True))
+                dm=re.search(r'(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s+([A-Z][a-z]+)\s+(\d{1,2})\s+(\d{4})',txt)
+                if dm:
+                    try:
+                        current_date=datetime.strptime(f'{dm.group(2)} {dm.group(3)} {dm.group(4)}','%B %d %Y').date()
+                    except: pass
+                    if len(tr.find_all('td'))<4:
+                        continue
+
+                cells=tr.find_all('td')
+                if len(cells)<5: continue
+
+                # Find the event cell by matching one of our selected macro event names.
+                event_name=''; event_idx=None; event_href=''
+                for idx,td in enumerate(cells):
+                    celltxt=_clean_calendar_value(td.get_text(' ',strip=True))
+                    if _calendar_metric_spec(celltxt):
+                        event_name=celltxt; event_idx=idx
+                        a=td.find('a',href=True)
+                        if a:
+                            href=a.get('href','')
+                            event_href=href if href.startswith('http') else ('https://tradingeconomics.com'+href if href.startswith('/') else '')
+                        break
+                if event_idx is None: continue
+
+                # Recover row date from attributes when a date header was not encountered.
+                row_date=current_date
+                if row_date is None:
+                    attrs=' '.join(str(v) for v in tr.attrs.values())
+                    mm=re.search(r'(20\d{2}-\d{2}-\d{2})',attrs)
+                    if mm:
+                        try: row_date=datetime.fromisoformat(mm.group(1)).date()
+                        except: pass
+                if row_date is None: continue
+
+                time_txt=''
+                for td in cells[:event_idx]:
+                    t=_clean_calendar_value(td.get_text(' ',strip=True))
+                    if re.fullmatch(r'\d{1,2}:\d{2}\s*(?:AM|PM)',t,re.I):
+                        time_txt=t; break
+                if not time_txt: continue
+
+                try:
+                    tm=datetime.strptime(time_txt.upper(),'%I:%M %p').time()
+                    dt_utc=datetime.combine(row_date,tm).replace(tzinfo=UTC)
+                    dt_sgt=dt_utc.astimezone(SGT)
+                except:
+                    continue
+
+                spec=_calendar_metric_spec(event_name)
+                if not spec: continue
+                group,metric,priority=spec
+
+                vals=[_clean_calendar_value(td.get_text(' ',strip=True)) for td in cells[event_idx+1:event_idx+5]]
+                while len(vals)<4: vals.append('')
+                actual,previous,consensus,forecast=vals[:4]
+
+                period=''
+                pm=re.search(r'\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC|Q[1-4])(?:/\d+)?\b',event_name,re.I)
+                if pm: period=pm.group(0).upper()
+
+                rows.append({
+                    'dt':dt_sgt,'group':group,'metric':metric,'priority':priority,
+                    'actual':actual,'previous':previous,'consensus':consensus,'forecast':forecast,
+                    'surprise':_calendar_surprise(actual,consensus),
+                    'period':period,'market_url':event_href or 'https://tradingeconomics.com/united-states/calendar',
+                    'raw_event':event_name
+                })
+            if rows:
+                return rows
+            last_error=ValueError('no selected macro events parsed')
+        except Exception as exc:
+            last_error=exc
+    raise ValueError(f'Trading Economics calendar unavailable: {last_error}')
+
+def _official_calendar_fallback():
+    """Release-date fallback from official calendars. Values remain blank rather than invented."""
+    rows=[]; now=datetime.now(NY_TZ)
+    # BLS calendar
+    try:
+        for e in parse_ics(req('https://www.bls.gov/schedule/news_release/bls.ics',timeout=12).text):
+            summary=e.get('SUMMARY',''); lo=summary.lower(); group=None
+            if 'employment situation' in lo: group='Jobs Report'
+            elif 'consumer price index' in lo: group='CPI Inflation'
+            elif 'producer price index' in lo: group='PPI Inflation'
+            elif 'job openings and labor turnover' in lo and 'state ' not in lo: group='JOLTS'
+            if not group: continue
+            dtline=next((v for k,v in e.items() if k.startswith('DTSTART')),None)
+            if not dtline: continue
+            try: dt=datetime.strptime(dtline[:15],'%Y%m%dT%H%M%S').replace(tzinfo=NY_TZ) if 'T' in dtline else datetime.strptime(dtline[:8],'%Y%m%d').replace(hour=8,minute=30,tzinfo=NY_TZ)
             except: continue
-            if dt>=now-timedelta(hours=3): out.append((dt,title,imp))
-    return out
+            if dt>=now-timedelta(days=2):
+                rows.append((dt.astimezone(SGT),group))
+    except: pass
 
-def ism_calendar():
-    now=datetime.now(NY_TZ); out=[]
-    for offset in range(4):
+    # BEA release schedule
+    try:
+        for df in pd.read_html(StringIO(req('https://www.bea.gov/news/schedule/',timeout=12).text)):
+            for _,row in df.astype(str).iterrows():
+                txt=' | '.join(row.tolist()); lo=txt.lower(); group=None
+                if 'personal income and outlays' in lo: group='PCE Inflation'
+                elif 'gdp' in lo and ('estimate' in lo or 'gross domestic product' in lo): group='GDP'
+                if not group: continue
+                m=re.search(r'([A-Z][a-z]+)\s+(\d{1,2})\s+(\d{1,2}:\d{2})\s*(AM|PM)',txt)
+                if not m: continue
+                try: dt=datetime.strptime(f'{m.group(1)} {m.group(2)} {now.year} {m.group(3)} {m.group(4)}','%B %d %Y %I:%M %p').replace(tzinfo=NY_TZ)
+                except: continue
+                if dt>=now-timedelta(days=2): rows.append((dt.astimezone(SGT),group))
+    except: pass
+
+    # ISM published cadence, official rule: first and third business days at 10am ET.
+    for offset in range(3):
         month=(now.month-1+offset)%12+1; year=now.year+(now.month-1+offset)//12
         weekdays=[]; x=date(year,month,1)
         while x.month==month and len(weekdays)<5:
             if x.weekday()<5: weekdays.append(x)
             x+=timedelta(days=1)
-        manu=weekdays[1] if month==1 else weekdays[0]; serv=weekdays[3] if month==1 else weekdays[2]
-        for dd,title in [(manu,'ISM Manufacturing PMI'),(serv,'ISM Services PMI')]:
+        manu=weekdays[0]; serv=weekdays[2]
+        for dd,group in [(manu,'ISM Manufacturing'),(serv,'ISM Services')]:
             dt=datetime(dd.year,dd.month,dd.day,10,0,tzinfo=NY_TZ)
-            if dt>=now-timedelta(hours=3): out.append((dt,title,'HIGH'))
-    return out
+            if dt>=now-timedelta(days=2): rows.append((dt.astimezone(SGT),group))
 
-def fomc_calendar():
-    now=datetime.now(NY_TZ); out=[]
+    # FOMC decisions
     for yr,dates in FOMC_DECISIONS.items():
         for ds in dates:
             dt=datetime.fromisoformat(ds).replace(hour=14,minute=0,tzinfo=NY_TZ)
-            if dt>=now-timedelta(hours=3): out.append((dt,'FOMC Decision','HIGH'))
-    return out
+            if dt>=now-timedelta(days=2): rows.append((dt.astimezone(SGT),'FOMC Decision'))
 
-def treasury_auctions():
-    out=[]; now=datetime.now(NY_TZ)
-    try: rows=req('https://www.treasurydirect.gov/TA_WS/securities/upcoming?format=json').json()
-    except: return out
-    for r in rows:
-        if r.get('securityType') not in {'Note','Bond','TIPS'}: continue
-        try: dd=datetime.fromisoformat(r.get('auctionDate','')[:10]).replace(hour=13,minute=0,tzinfo=NY_TZ)
-        except: continue
-        if dd<now-timedelta(hours=3): continue
-        term=r.get('securityTerm',''); high=any(x in term for x in ['10-Year','20-Year','30-Year'])
-        amount=fnum(r.get('offeringAmount'))
-        out.append((dd,f'U.S. Treasury {term} {r.get("securityType")}', 'HIGH' if high else 'MEDIUM',amount))
+    out=[]
+    seen=set()
+    for dt,group in sorted(rows,key=lambda x:x[0]):
+        key=(dt.date(),group)
+        if key in seen: continue
+        seen.add(key)
+        meta=CALENDAR_GROUPS[group]
+        out.append({
+            'iso_date':dt.date().isoformat(),'date':dt.strftime('%a, %d %b'),'time':dt.strftime('%H:%M'),
+            'title':group,'period':'','importance':meta['importance'],'source':meta['source'],
+            'detail_url':meta['detail_url'],'market_url':'https://tradingeconomics.com/united-states/calendar',
+            'status':'RELEASED' if dt<=sgt_now() else 'UPCOMING','cached':False,
+            'metrics':[]
+        })
     return out
 
 def major_calendar():
-    events=[]
-    for fn in [bls_calendar,bea_calendar,ism_calendar,fomc_calendar]:
-        try: events.extend([(dt,title,imp,None) for dt,title,imp in fn()])
-        except: pass
-    events.extend(treasury_auctions())
-    seen=set(); out=[]
-    for dt,title,imp,amt in sorted(events,key=lambda x:x[0]):
-        k=(dt.date(),title)
-        if k in seen: continue
-        seen.add(k); s=dt.astimezone(SGT)
-        out.append({'date':s.strftime('%a, %d %b'),'time':s.strftime('%H:%M'),'title':title,'importance':imp,'amount':amt})
-    return out[:10]
+    now=sgt_now()
+    try:
+        raw=_te_calendar_rows()
+    except Exception:
+        raw=[]
+
+    groups={}
+    for r in raw:
+        dt=r['dt']
+        if dt < now-timedelta(hours=36): continue
+        if dt > now+timedelta(days=45): continue
+        key=(dt.strftime('%Y-%m-%d %H:%M'),r['group'])
+        g=groups.setdefault(key,{
+            'dt':dt,'title':r['group'],'period':r.get('period',''),
+            'metrics':[],'market_url':r.get('market_url') or 'https://tradingeconomics.com/united-states/calendar'
+        })
+        if not g.get('period') and r.get('period'): g['period']=r['period']
+        g['metrics'].append({
+            'name':r['metric'],'previous':r['previous'],'consensus':r['consensus'],
+            'actual':r['actual'],'forecast':r['forecast'],'surprise':r['surprise'],
+            'priority':r['priority']
+        })
+
+    out=[]
+    for g in groups.values():
+        meta=CALENDAR_GROUPS[g['title']]
+        metrics=sorted(g['metrics'],key=lambda x:x['priority'])
+        for m in metrics: m.pop('priority',None)
+        dt=g['dt']
+        out.append({
+            'iso_date':dt.date().isoformat(),'date':dt.strftime('%a, %d %b'),'time':dt.strftime('%H:%M'),
+            'title':g['title'],'period':g.get('period',''),'importance':meta['importance'],'source':meta['source'],
+            'detail_url':meta['detail_url'],'market_url':g['market_url'],
+            'status':'RELEASED' if dt<=now else 'UPCOMING','cached':False,'metrics':metrics
+        })
+
+    # If public calendar parsing is temporarily unavailable, carry last-good values,
+    # then merge official release dates so the section never disappears.
+    prev=_previous_snapshot().get('calendar',[])
+    if not out and isinstance(prev,list):
+        for e in prev:
+            try:
+                dd=datetime.fromisoformat(e.get('iso_date','')).replace(tzinfo=SGT)
+                if dd.date() >= (now.date()-timedelta(days=1)):
+                    z=dict(e); z['cached']=True; out.append(z)
+            except: pass
+
+    fallback=_official_calendar_fallback()
+    existing={(e.get('iso_date'),e.get('title')) for e in out}
+    for e in fallback:
+        k=(e.get('iso_date'),e.get('title'))
+        if k not in existing:
+            out.append(e); existing.add(k)
+
+    # Keep recent releases plus enough future horizon to always include CPI/PPI/PCE/jobs/retail/FOMC.
+    out=sorted(out,key=lambda e:(e.get('iso_date',''),e.get('time',''),0 if e.get('status')=='RELEASED' else 1,e.get('title','')))
+    recent=[e for e in out if e.get('status')=='RELEASED'][-3:]
+    upcoming=[e for e in out if e.get('status')!='RELEASED'][:14]
+    return recent+upcoming
 
 # ---------------- SIGNAL ENGINE ----------------
 def standardized_momentum(m, horizon_key, vol):
