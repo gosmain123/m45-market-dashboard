@@ -358,6 +358,71 @@ body{font-size:13.25px;line-height:1.38;letter-spacing:0;background:#eef1f4;colo
  .coreMeta{padding-left:2px}
  .coreTabs{width:100%}.coreTab{flex:1 1 auto}
 }
+
+/* M45 deck-derived visual language: Inter, charcoal, warm peach, restrained market colors */
+:root{
+ --ink:#292F40;--muted:#8A96A8;--muted2:#A4A3A4;
+ --line:#D6DCE5;--line2:#E6EAEF;--paper:#FFFFFF;--bg:#F2F3F6;
+ --navy:#292F40;--navy2:#44546A;--blue:#1565C0;--teal:#00838F;
+ --green:#1B5E20;--red:#C62828;--amber:#C88A00;--peach:#F2AA84;
+ --soft:#F4F6F8;--softPeach:#FDECDD;--softGreen:#CFE3D6;--softRed:#FCE4E4;
+}
+body{font-family:Inter,"Segoe UI",Arial,sans-serif;background:#F2F3F6;color:#292F40}
+.top{background:#292F40;border-bottom:0}
+.brand b{color:#FFFFFF}.brand span,.nav a,.stamp{color:#D6DCE5}
+.nav a:hover{background:#44546A;color:#FFFFFF}
+.right button{border-color:#8A96A8;color:#FFFFFF}.right button:hover{background:#44546A}
+.section{border-color:#D6DCE5;background:#FFFFFF;box-shadow:none}
+.sh{position:relative;background:#FFFFFF;border-bottom:1px solid #D6DCE5;padding-left:15px}
+.sh:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#F2AA84}
+.st{color:#292F40;font-weight:800}.sn{color:#8A96A8}
+.group,.researchGroup td{background:#F4F6F8!important;color:#44546A!important}
+.matrix th,.researchTable thead th{background:#F4F6F8;color:#44546A;border-bottom-color:#D6DCE5}
+.matrix td,.researchTable td{border-bottom-color:#E6EAEF}
+.assetLink,.symbolLink,.calTitle,.detailLink,.catalystCell a,.catalystRow a{color:#1565C0}
+.pos,.vpos{color:#1B5E20!important}.neg,.vneg{color:#C62828!important}
+.pill.ow{background:#CFE3D6;color:#1B5E20;border-color:#CFE3D6}
+.pill.uw{background:#FCE4E4;color:#C62828;border-color:#FCE4E4}
+.pill.nt{background:#F4F6F8;color:#44546A;border-color:#D6DCE5}
+.pill.high{background:#FDECDD;color:#8B4D2F;border-color:#F2AA84}
+.coreTab{background:#FFFFFF;border-color:#D6DCE5;color:#44546A}
+.coreTab:hover{background:#F4F6F8;color:#292F40}
+.coreTab.active{background:#292F40;border-color:#292F40;color:#FFFFFF;box-shadow:inset 0 -3px 0 #F2AA84}
+.materialDot{background:#F2AA84}
+.catalystRow td{background:#FFF9F5!important;border-top-color:#FDECDD!important}
+.catalystRow span{color:#A45E38}
+.storyHead,.storySummaryBox,.endNode{background:#F4F6F8}
+.storyHead h2,.flowNode .ft,.branchTitle,.detailTitle{color:#292F40}
+.storySummaryBox{border-left-color:#F2AA84}
+.flowNode.supportive{border-left-color:#00838F}.flowNode.warning{border-left-color:#C88A00}.flowNode.mixed{border-left-color:#8A96A8}
+.branchCard.supportive{border-top-color:#00838F}.branchCard.warning{border-top-color:#C88A00}.branchCard.mixed{border-top-color:#8A96A8}
+.internalCard.posi{border-top-color:#1B5E20}.internalCard.negi{border-top-color:#C62828}.internalCard.neui{border-top-color:#8A96A8}
+.detailSectionTitle{background:#F4F6F8;color:#44546A}.detailNote{background:#F4F6F8;border-left-color:#F2AA84}
+.scorebar{background:#E6EAEF}.scorebar i{background:#44546A}
+
+/* Consistent return heat map — same language everywhere */
+.heatp1{background:#F1F7F2!important;color:#1B5E20!important}
+.heatp2{background:#DDEEDF!important;color:#1B5E20!important;font-weight:700}
+.heatp3{background:#C8E6C9!important;color:#174E1B!important;font-weight:800}
+.heatn1{background:#FDF3F3!important;color:#C62828!important}
+.heatn2{background:#F9E2E2!important;color:#C62828!important;font-weight:700}
+.heatn3{background:#F2C8C8!important;color:#A51F1F!important;font-weight:800}
+.heatp,.heatn{background:transparent!important}
+
+/* Long-horizon data tables */
+.crossAssetTable{min-width:1540px}
+.longHorizonTable{min-width:1320px!important}
+.allocationTable{min-width:1450px!important}
+.crossAssetTable th,.crossAssetTable td,.longHorizonTable th,.longHorizonTable td,.allocationTable th,.allocationTable td{padding-left:7px;padding-right:7px}
+.nonValLens b{display:block;font-size:9.4px;color:#44546A}.nonValLens small{display:block;font-size:8px;color:#8A96A8;margin-top:1px}
+.headlineLens small{color:#8A96A8}
+.tableScroll{scrollbar-width:thin;scrollbar-color:#A4A3A4 #F4F6F8}
+.tableScroll::-webkit-scrollbar{height:7px}.tableScroll::-webkit-scrollbar-track{background:#F4F6F8}.tableScroll::-webkit-scrollbar-thumb{background:#A4A3A4}
+.creditTable td:nth-child(2){color:#44546A}
+.mutedValue{color:#8A96A8!important;font-style:italic}.pendingValue{color:#1565C0!important;font-weight:700}
+.calPlaceholder{padding:14px 12px;color:#8A96A8;font-size:10px;line-height:1.45;background:#F4F6F8}
+.calPlaceholder b{color:#44546A;margin-right:6px}
+.calPlaceholder span{color:#8A96A8}
 </style>
 </head>
 <body>
@@ -424,8 +489,8 @@ body{font-size:13.25px;line-height:1.38;letter-spacing:0;background:#eef1f4;colo
 
 <div id="allocation">
 <section class="section">
-  <div class="sh"><div class="st">SYSTEMATIC TACTICAL ALLOCATION</div><div class="sn">Daily OW / Neutral / UW signal · 1–6M horizon</div></div>
-  <div class="body"><table class="matrix compact"><thead><tr><th>Asset class</th><th>View</th><th>Valuation / Carry</th><th>Score</th><th>1M</th><th>3M</th><th>6M</th><th>60D vol</th><th style="text-align:left">Main signal</th></tr></thead><tbody id="signals"></tbody></table><div class="details"><summary>Signal methodology</summary><div class="method">50% multi-horizon risk-adjusted trend (1M/3M/6M = 50/30/20), 25% relative strength versus a relevant benchmark, and 25% cross-asset regime alignment. Score ≥ +25 = Overweight; ≤ −25 = Underweight; otherwise Neutral.<br><br><b>Asset lens:</b> equity ETFs show portfolio P/E / earnings yield / dividend yield where available; fixed-income ETFs show issuer YTM / duration / SEC yield / OAS; real-asset ETFs are not given an earnings multiple.</div></div></div>
+  <div class="sh"><div class="st">SYSTEMATIC TACTICAL ALLOCATION</div><div class="sn">Daily OW / Neutral / UW signal · tactical score with long-term context</div></div>
+  <div class="body"><div class="tableScroll"><table class="matrix compact allocationTable"><thead><tr><th>Asset class</th><th>View</th><th>Valuation / Carry</th><th>Score</th><th>1M</th><th>3M</th><th>6M</th><th>1Y</th><th>3Y</th><th>5Y</th><th>60D vol</th><th style="text-align:left">Main signal</th></tr></thead><tbody id="signals"></tbody></table></div><div class="details"><summary>Signal methodology</summary><div class="method">50% multi-horizon risk-adjusted trend (1M/3M/6M = 50/30/20), 25% relative strength versus a relevant benchmark, and 25% cross-asset regime alignment. Score ≥ +25 = Overweight; ≤ −25 = Underweight; otherwise Neutral.<br><br><b>Asset lens:</b> equity ETFs show portfolio P/E / earnings yield / dividend yield where available; fixed-income ETFs show issuer YTM / duration / SEC yield / OAS; real-asset ETFs are not given an earnings multiple.</div></div></div>
 </section>
 </div>
 
@@ -470,7 +535,19 @@ function n(x,d=2){return x===null||x===undefined||Number.isNaN(Number(x))?'—':
 function pct(x,d=2){return x===null||x===undefined?'—':`${x>=0?'+':''}${n(x,d)}%`}
 function bp(x,d=0){return x===null||x===undefined?'—':`${x>=0?'+':''}${n(x,d)} bp`}
 function cls(x){return x>0?'pos':x<0?'neg':'neu'}
-function heat(x){return x>0.35?'heatp':x<-0.35?'heatn':''}
+const HEAT_LIMITS={
+ '1d':[0.35,1.0,2.0],'1w':[0.8,2.0,4.0],'1m':[1.5,4.0,8.0],
+ '3m':[3.0,8.0,16.0],'6m':[5.0,12.0,25.0],'ytd':[5.0,12.0,25.0],
+ '1y':[7.0,18.0,35.0],'3y':[15.0,35.0,70.0],'5y':[20.0,50.0,100.0],
+ 'relative':[0.35,1.0,2.0]
+};
+function heatH(x,h='1d'){
+ if(x===null||x===undefined||Number.isNaN(Number(x)))return '';
+ const a=Math.abs(Number(x)), lim=HEAT_LIMITS[h]||HEAT_LIMITS['1d'];
+ const level=a>=lim[2]?3:a>=lim[1]?2:a>=lim[0]?1:0;
+ return level?(Number(x)>0?'heatp':'heatn')+level:'';
+}
+function returnCell(v,h,d=2){return '<td class="'+cls(v)+' '+heatH(v,h)+'">'+pct(v,d)+'</td>'}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 const ASSET_SYMBOLS={spx:'^GSPC',nasdaq:'^IXIC',russell:'^RUT',sox:'^SOX',es:'ES=F',nq:'NQ=F',vix:'^VIX',stoxx50:'^STOXX50E',ftse:'^FTSE',nikkei:'^N225',kospi:'^KS11',hsi:'^HSI',csi300:'000300.SS',eem:'EEM',dxy:'DX-Y.NYB',usdjpy:'JPY=X',eurusd:'EURUSD=X',usdcnh:'CNH=X',brent:'BZ=F',wti:'CL=F',gold:'GC=F',copper:'HG=F',btc:'BTC-USD'};
 const ASSET_LENS_PROXY={spx:'SPY',nasdaq:'QQQ',russell:'IWM',sox:'SOXX',es:'SPY',nq:'QQQ',stoxx50:'FEZ',ftse:'EWU',nikkei:'EWJ',kospi:'EWY',hsi:'EWH',csi300:'ASHR',eem:'EEM'};
@@ -554,9 +631,14 @@ function stockDetailHTML(sym){
  const market=[
   ['1D',pct(row?.move),row?.move],
   ['1W',pct(row?.['1w']),row?.['1w']],
-  ['Relative',pct(row?.relative),row?.relative],
+  ['1M',pct(row?.['1m']),row?.['1m']],
+  ['6M',pct(row?.['6m']),row?.['6m']],
+  ['1Y',pct(row?.['1y']),row?.['1y']],
+  ['3Y',pct(row?.['3y']),row?.['3y']],
+  ['5Y',pct(row?.['5y']),row?.['5y']],
+  ['Relative · 1D',pct(row?.relative),row?.relative],
   ['Consensus target upside',fmtPct1(v.target_upside),v.target_upside],
-  ['Dividend yield',v.dividend_yield!==null&&v.dividend_yield!==undefined?n(v.dividend_yield,2)+'%':'—']
+  ['Dividend yield',v.dividend_yield!==null&&v.dividend_yield!==undefined?n(v.dividend_yield,2)+'%':'Not available']
  ];
  const source=(v.source||'public quote feed')+(v.stale?' · cached':'');
  return '<div class="detailHead"><div><div class="detailKicker">EQUITY DETAIL</div><div class="detailTitle">'+esc(title)+'</div></div><a class="detailLink" target="_blank" rel="noopener noreferrer" href="'+qurl(sym)+'">Quote ↗</a></div>'+
@@ -650,6 +732,13 @@ function regGauge(title,v,desc){return `<div class="regcell"><div class="regtitl
 function curveName(c){let a=c['2Y']?.bp1d,b=c['10Y']?.bp1d,s=c['2s10s']?.bp1d||0;if(a===undefined||b===undefined)return'—';if(a>0&&b>0)return s>1?'Bear steepening':s<-1?'Bear flattening':'Parallel selloff';if(a<0&&b<0)return s>1?'Bull steepening':s<-1?'Bull flattening':'Parallel rally';if(a<0&&b>0)return'Twist steepening';if(a>0&&b<0)return'Twist flattening';return'Mixed'}
 function renderTakeaways(d){document.getElementById('takeaways').innerHTML=(d.takeaways||[]).map((x,i)=>`<div class="take"><b>${String(i+1).padStart(2,'0')}</b><p>${esc(x)}</p></div>`).join('')}
 
+function assetLensFallback(k){
+ if(k==='vix')return '<div class="nonValLens"><b>Volatility</b><small>index</small></div>';
+ if(['dxy','usdjpy','eurusd','usdcnh'].includes(k))return '<div class="nonValLens"><b>FX / Macro</b><small>no earnings multiple</small></div>';
+ if(['brent','wti','gold','copper'].includes(k))return '<div class="nonValLens"><b>Real Asset</b><small>trend / macro lens</small></div>';
+ if(k==='btc')return '<div class="nonValLens"><b>Digital Asset</b><small>trend / volatility</small></div>';
+ return '<div class="nonValLens"><b>Market</b><small>price lens</small></div>';
+}
 function assetRows(d){
  const m=d.market||{}, lens=d.etf_lens||{}; let rows=[];
  const groups=[
@@ -659,14 +748,17 @@ function assetRows(d){
   ['Commodities / Crypto',[['brent','Brent'],['wti','WTI'],['gold','Gold'],['copper','Copper'],['btc','Bitcoin']]]
  ];
  for(const [g,arr] of groups){
-   rows.push('<tr><td class="group" colspan="8">'+g+'</td></tr>');
+   rows.push('<tr><td class="group" colspan="13">'+g+'</td></tr>');
    for(const [k,label] of arr){
      const x=m[k]||{}, proxy=ASSET_LENS_PROXY[k], l=proxy?lens[proxy]:null;
-     const lensCell=l?('<div class="headlineLens"><span>'+etfLensHTML(l,proxy)+'</span><small>'+esc(proxy)+' proxy</small></div>'):'—';
-     rows.push('<tr><td>'+(ASSET_SYMBOLS[k]?qlink(ASSET_SYMBOLS[k],label):esc(label))+'</td><td>'+priceFmt(k,x.price)+'</td><td>'+lensCell+'</td>'+['1d','1w','1m','ytd'].map(z=>'<td class="'+cls(x[z])+' '+heat(x[z])+'">'+pct(x[z])+'</td>').join('')+'<td>'+(x.vol60!==undefined&&x.vol60!==null?n(x.vol60,1)+'%':'—')+'</td></tr>');
+     const lensCell=l?('<div class="headlineLens"><span>'+etfLensHTML(l,proxy)+'</span><small>'+esc(proxy)+' proxy</small></div>'):assetLensFallback(k);
+     rows.push('<tr><td>'+(ASSET_SYMBOLS[k]?qlink(ASSET_SYMBOLS[k],label):esc(label))+'</td><td>'+priceFmt(k,x.price)+'</td><td>'+lensCell+'</td>'+
+       returnCell(x['1d'],'1d')+returnCell(x['1w'],'1w')+returnCell(x['1m'],'1m')+returnCell(x['3m'],'3m')+returnCell(x['6m'],'6m')+
+       returnCell(x['ytd'],'ytd')+returnCell(x['1y'],'1y')+returnCell(x['3y'],'3y')+returnCell(x['5y'],'5y')+
+       '<td>'+(x.vol60!==undefined&&x.vol60!==null?n(x.vol60,1)+'%':'Not available')+'</td></tr>');
    }
  }
- document.getElementById('crossAsset').innerHTML='<div class="tableScroll"><table class="matrix crossAssetTable"><thead><tr><th>Asset</th><th>Level</th><th>Valuation / Proxy</th><th>1D</th><th>1W</th><th>1M</th><th>YTD</th><th>60D vol</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
+ document.getElementById('crossAsset').innerHTML='<div class="tableScroll"><table class="matrix crossAssetTable"><thead><tr><th>Asset</th><th>Level</th><th>Valuation / Lens</th><th>1D</th><th>1W</th><th>1M</th><th>3M</th><th>6M</th><th>YTD</th><th>1Y</th><th>3Y</th><th>5Y</th><th>60D vol</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
 }
 function renderRates(d){
  const c=d.curve||{}, f=d.fred||{}, a=d.acm||{}, be=d.breakeven||{};
@@ -690,13 +782,13 @@ function drawCurve(c){const svg=document.getElementById('curveSvg');let ks=['2Y'
 function renderSimple(d){
  const cp=d.credit_proxy||{};
  const ig=cp.ig||{}, hy=cp.hy||{}, hi=cp.hy_vs_ig||{}, ht=cp.hy_vs_tsy||{};
- const asof=hy.asof||ig.asof||'—';
- document.getElementById('credit').innerHTML=table3([
-  ['IG Credit · LQD',ig.price!==undefined?'$'+n(ig.price,2):'—',pct(ig['1d']),pct(ig['1m'])],
-  ['HY Credit · HYG',hy.price!==undefined?'$'+n(hy.price,2):'—',pct(hy['1d']),pct(hy['1m'])],
-  ['HY vs IG','—',pct(hi['1d']),pct(hi['1m'])],
-  ['HY vs Treasuries','—',pct(ht['1d']),pct(ht['1m'])]
- ],['Level','1D','1M'])+'<div class="sub" style="margin-top:7px;line-height:1.4">As of '+esc(asof)+' · positive relative return = riskier credit outperforming</div>';
+ const asof=hy.asof||ig.asof||'Not available';
+ document.getElementById('credit').innerHTML='<table class="matrix compact creditTable"><thead><tr><th>Credit lens</th><th>Level / Type</th><th>1D</th><th>1M</th></tr></thead><tbody>'+
+  '<tr><td>IG Credit · LQD</td><td>'+(ig.price!==undefined?'$'+n(ig.price,2):'Not available')+'</td>'+returnCell(ig['1d'],'1d')+returnCell(ig['1m'],'1m')+'</tr>'+
+  '<tr><td>HY Credit · HYG</td><td>'+(hy.price!==undefined?'$'+n(hy.price,2):'Not available')+'</td>'+returnCell(hy['1d'],'1d')+returnCell(hy['1m'],'1m')+'</tr>'+
+  '<tr><td>HY vs IG</td><td>Relative return</td>'+returnCell(hi['1d'],'relative')+returnCell(hi['1m'],'1m')+'</tr>'+
+  '<tr><td>HY vs Treasuries</td><td>Relative return</td>'+returnCell(ht['1d'],'relative')+returnCell(ht['1m'],'1m')+'</tr>'+
+  '</tbody></table><div class="sub" style="margin-top:7px;line-height:1.4">As of '+esc(asof)+' · positive relative return = riskier credit outperforming</div>';
 }
 function table3(rows,heads){return `<table class="matrix compact"><thead><tr><th></th>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="${r[2]?.startsWith('+')?'pos':r[2]?.startsWith('-')?'neg':''}">${r[2]}</td><td class="${r[3]?.startsWith('+')?'pos':r[3]?.startsWith('-')?'neg':''}">${r[3]}</td></tr>`).join('')}</tbody></table>`}
 function renderInternals(d){
@@ -716,9 +808,22 @@ function renderInternals(d){
  }).join('');
 }
 
-function renderSectors(d){let x=d.sectors||[];document.getElementById('sectors').innerHTML=`<table class="matrix compact"><thead><tr><th>Sector</th><th>ETF</th><th>Valuation</th><th>1D</th><th>1W</th><th>1M</th><th>3M</th><th>1M vs S&P</th></tr></thead><tbody>${x.map(r=>`<tr><td>${qlink(r.symbol,r.name,'symbolLink')}</td><td>${qlink(r.symbol,r.symbol,'symbolLink')}</td><td>${etfLensHTML(r.lens,r.symbol)}</td><td class="${cls(r['1d'])} ${heat(r['1d'])}">${pct(r['1d'])}</td><td class="${cls(r['1w'])}">${pct(r['1w'])}</td><td class="${cls(r['1m'])}">${pct(r['1m'])}</td><td class="${cls(r['3m'])}">${pct(r['3m'])}</td><td class="${cls(r.rel1m)}">${pct(r.rel1m)}</td></tr>`).join('')}</tbody></table>`}
-
-function renderFactors(d){let x=d.factors||[];document.getElementById('factors').innerHTML=`<table class="matrix compact"><thead><tr><th>Factor</th><th>ETF</th><th>Valuation</th><th>1D</th><th>1W</th><th>1M</th><th>1M vs S&P</th></tr></thead><tbody>${x.map(r=>`<tr><td>${qlink(r.symbol,r.name,'symbolLink')}</td><td>${qlink(r.symbol,r.symbol,'symbolLink')}</td><td>${etfLensHTML(r.lens,r.symbol)}</td><td class="${cls(r['1d'])} ${heat(r['1d'])}">${pct(r['1d'])}</td><td class="${cls(r['1w'])}">${pct(r['1w'])}</td><td class="${cls(r['1m'])}">${pct(r['1m'])}</td><td class="${cls(r.rel1m)}">${pct(r.rel1m)}</td></tr>`).join('')}</tbody></table><details class="selectionDetails"><summary>How to read factor tape</summary><div class="method">Growth vs Value shows duration / earnings leadership; Equal Weight vs S&P shows breadth; Quality / Min Vol indicate whether leadership is defensive or high-beta. ETF P/E is a portfolio-level field from the public quote source and should not be read as the same methodology as a single-stock forward P/E.</div></details>`}
+function renderSectors(d){
+ let x=d.sectors||[];
+ document.getElementById('sectors').innerHTML='<div class="tableScroll"><table class="matrix compact longHorizonTable"><thead><tr><th>Sector</th><th>ETF</th><th>Valuation</th><th>1D</th><th>1W</th><th>1M</th><th>3M</th><th>6M</th><th>1Y</th><th>3Y</th><th>5Y</th><th>1M vs S&P</th></tr></thead><tbody>'+
+ x.map(r=>'<tr><td>'+qlink(r.symbol,r.name,'symbolLink')+'</td><td>'+qlink(r.symbol,r.symbol,'symbolLink')+'</td><td>'+etfLensHTML(r.lens,r.symbol)+'</td>'+
+   returnCell(r['1d'],'1d')+returnCell(r['1w'],'1w')+returnCell(r['1m'],'1m')+returnCell(r['3m'],'3m')+returnCell(r['6m'],'6m')+
+   returnCell(r['1y'],'1y')+returnCell(r['3y'],'3y')+returnCell(r['5y'],'5y')+returnCell(r.rel1m,'relative')+'</tr>').join('')+
+ '</tbody></table></div>';
+}
+function renderFactors(d){
+ let x=d.factors||[];
+ document.getElementById('factors').innerHTML='<div class="tableScroll"><table class="matrix compact longHorizonTable"><thead><tr><th>Factor</th><th>ETF</th><th>Valuation</th><th>1D</th><th>1W</th><th>1M</th><th>3M</th><th>6M</th><th>1Y</th><th>3Y</th><th>5Y</th><th>1M vs S&P</th></tr></thead><tbody>'+
+ x.map(r=>'<tr><td>'+qlink(r.symbol,r.name,'symbolLink')+'</td><td>'+qlink(r.symbol,r.symbol,'symbolLink')+'</td><td>'+etfLensHTML(r.lens,r.symbol)+'</td>'+
+   returnCell(r['1d'],'1d')+returnCell(r['1w'],'1w')+returnCell(r['1m'],'1m')+returnCell(r['3m'],'3m')+returnCell(r['6m'],'6m')+
+   returnCell(r['1y'],'1y')+returnCell(r['3y'],'3y')+returnCell(r['5y'],'5y')+returnCell(r.rel1m,'relative')+'</tr>').join('')+
+ '</tbody></table></div><details class="selectionDetails"><summary>How to read factor tape</summary><div class="method">Growth vs Value shows duration / earnings leadership; Equal Weight vs S&P shows breadth; Quality / Min Vol indicate whether leadership is defensive or high-beta. ETF P/E is a portfolio-level field from the public quote source and should not be read as the same methodology as a single-stock forward P/E.</div></details>';
+}
 
 const CORE_GROUPS=[
  ['today','Today'],
@@ -749,9 +854,9 @@ function coreRow(r,showGroup){
  const sub=esc(r.company)+(showGroup?' · <span class="coreSleeve">'+esc(coreGroupShort(r.group))+'</span>':'');
  const main='<tr>'+
    '<td class="coreName"><div class="nm">'+(r.material?'<span class="materialDot"></span>':'')+qlink(r.symbol,r.display,'symbolLink')+'</div><div class="sub">'+sub+'</div></td>'+
-   '<td class="num '+cls(r.move)+'"><b>'+pct(r.move)+'</b></td>'+
+   '<td class="num '+cls(r.move)+' '+heatH(r.move,'1d')+'"><b>'+pct(r.move)+'</b></td>'+
    '<td class="num '+cls(r["1w"])+'">'+pct(r["1w"])+'</td>'+
-   '<td class="num '+cls(r.relative)+'">'+pct(r.relative)+'</td>'+
+   '<td class="num '+cls(r.relative)+' '+heatH(r.relative,'relative')+'">'+pct(r.relative)+'</td>'+
    '<td class="valn">'+valuationHTML(r.valuation,r.symbol)+'</td>'+
    '<td class="fundn">'+fundamentalHTML(r.valuation,r.symbol)+'</td>'+
  '</tr>';
@@ -798,8 +903,8 @@ function renderBroadTable(rows){
  rows.map(function(r){return '<tr>'+
    '<td class="coreName"><div class="nm">'+qlink(r.symbol,r.display,'symbolLink')+'</div><div class="sub">'+esc(r.company)+'</div></td>'+
    '<td>'+esc(r.sector)+'</td>'+
-   '<td class="num '+cls(r.move)+'"><b>'+pct(r.move)+'</b></td>'+
-   '<td class="num '+cls(r.relative)+'">'+pct(r.relative)+'</td>'+
+   '<td class="num '+cls(r.move)+' '+heatH(r.move,'1d')+'"><b>'+pct(r.move)+'</b></td>'+
+   '<td class="num '+cls(r.relative)+' '+heatH(r.relative,'relative')+'">'+pct(r.relative)+'</td>'+
    '<td class="valn">'+valuationHTML(r.valuation,r.symbol)+'</td>'+
    '<td class="fundn">'+fundamentalHTML(r.valuation,r.symbol)+'</td>'+
    '<td class="catalystCell">'+(r.explanation?(r.link?'<a target="_blank" rel="noopener noreferrer" href="'+esc(r.link)+'">'+esc(r.explanation)+'</a>':esc(r.explanation)):'')+'</td>'+
@@ -811,7 +916,13 @@ function renderMovers(d){
 }
 function renderSignals(d){
  let x=d.signals||[];
- document.getElementById('signals').innerHTML=x.map(function(r){return '<tr><td><div class="ticker">'+qlink(r.symbol,r.name,'symbolLink')+'</div><div class="sub">'+qlink(r.symbol,r.symbol,'symbolLink')+' · '+r.class+'</div></td><td><span class="pill '+(r.view==='OVERWEIGHT'?'ow':r.view==='UNDERWEIGHT'?'uw':'nt')+'">'+r.view+'</span></td><td>'+etfLensHTML(r.lens,r.symbol)+'</td><td class="barcell"><div style="display:flex;justify-content:space-between;gap:6px"><b class="'+cls(r.score)+'">'+(r.score>=0?'+':'')+n(r.score,0)+'</b></div>'+scoreGauge(r.score)+'</td><td class="'+cls(r['1m'])+'">'+pct(r['1m'])+'</td><td class="'+cls(r['3m'])+'">'+pct(r['3m'])+'</td><td class="'+cls(r['6m'])+'">'+pct(r['6m'])+'</td><td>'+(r.vol!==null?n(r.vol,1)+'%':'—')+'</td><td class="driver">'+esc(r.driver)+'<div class="sub">Trend '+(r.trend>=0?'+':'')+n(r.trend,0)+' · Relative '+(r.relative>=0?'+':'')+n(r.relative,0)+' · Macro '+(r.macro>=0?'+':'')+n(r.macro,0)+'</div></td></tr>'}).join('');
+ document.getElementById('signals').innerHTML=x.map(function(r){
+  return '<tr><td><div class="ticker">'+qlink(r.symbol,r.name,'symbolLink')+'</div><div class="sub">'+qlink(r.symbol,r.symbol,'symbolLink')+' · '+r.class+'</div></td>'+
+  '<td><span class="pill '+(r.view==='OVERWEIGHT'?'ow':r.view==='UNDERWEIGHT'?'uw':'nt')+'">'+r.view+'</span></td>'+
+  '<td>'+etfLensHTML(r.lens,r.symbol)+'</td><td class="barcell"><div style="display:flex;justify-content:space-between;gap:6px"><b class="'+cls(r.score)+'">'+(r.score>=0?'+':'')+n(r.score,0)+'</b></div>'+scoreGauge(r.score)+'</td>'+
+  returnCell(r['1m'],'1m')+returnCell(r['3m'],'3m')+returnCell(r['6m'],'6m')+returnCell(r['1y'],'1y')+returnCell(r['3y'],'3y')+returnCell(r['5y'],'5y')+
+  '<td>'+(r.vol!==null?n(r.vol,1)+'%':'Not available')+'</td><td class="driver">'+esc(r.driver)+'<div class="sub">Trend '+(r.trend>=0?'+':'')+n(r.trend,0)+' · Relative '+(r.relative>=0?'+':'')+n(r.relative,0)+' · Macro '+(r.macro>=0?'+':'')+n(r.macro,0)+'</div></td></tr>';
+ }).join('');
 }
 function storyNode(x){
  if(!x)return '';
@@ -835,22 +946,24 @@ function renderCalendar(d){
  const x=d.calendar||[];
  const cards=x.map(function(e){
   const metrics=(e.metrics||[]).map(function(m){
-   const cons=m.consensus||'—', prev=m.previous||'—', act=m.actual||'—';
-   const model=(!m.consensus&&m.forecast)?'<span class="model">model f/c '+esc(m.forecast)+'</span>':'';
+   const prev=m.previous||'Not available';
+   const cons=m.consensus||'Not formed';
+   const act=m.actual||((e.status||'UPCOMING')==='RELEASED'?'Not available':'Pending');
+   const model=(!m.consensus&&m.forecast)?'<span class="model">Model f/c '+esc(m.forecast)+'</span>':'';
    const surprise=(m.surprise&&m.actual&&m.consensus)?'<span class="calSurprise">'+esc(m.surprise)+' vs cons.</span>':'';
-   return '<div class="calMetric"><div class="mn">'+esc(m.name)+model+'</div><div class="val">'+esc(prev)+'</div><div class="val">'+esc(cons)+'</div><div class="val actual">'+esc(act)+surprise+'</div></div>';
+   return '<div class="calMetric"><div class="mn">'+esc(m.name)+model+'</div><div class="val">'+esc(prev)+'</div><div class="val '+(!m.consensus?'mutedValue':'')+'">'+esc(cons)+'</div><div class="val actual '+(!m.actual?'pendingValue':'')+'">'+esc(act)+surprise+'</div></div>';
   }).join('');
-  const empty=metrics||'<div class="calMetric"><div class="mn">Release scheduled</div><div class="val">—</div><div class="val">—</div><div class="val actual">—</div></div>';
+  const empty=metrics||'<div class="calPlaceholder"><b>Release scheduled.</b><span>Previous / consensus / actual will populate when the release window and survey data become available.</span></div>';
   const status=(e.status||'UPCOMING').toLowerCase();
   return '<div class="calCard '+status+'">'+
    '<div class="calTop"><div><div class="calWhen">'+esc(e.date)+' · '+esc(e.time)+' SGT · '+esc(e.source||'')+'</div>'+
    '<div class="calTitleRow"><a class="calTitle" href="'+esc(e.detail_url||'#')+'" target="_blank" rel="noopener noreferrer">'+esc(e.title)+' ↗</a>'+(e.period?'<span class="calPeriod">'+esc(e.period)+'</span>':'')+'</div></div>'+
    '<div class="calMeta"><span class="pill '+(e.importance==='HIGH'?'high':'med')+'">'+esc(e.importance||'')+'</span><span class="calStatus '+status+'">'+esc(e.status||'UPCOMING')+'</span></div></div>'+
-   '<div class="calMetrics"><div class="calMetricHead"><div>Metric</div><div style="text-align:right">Previous</div><div style="text-align:right">Consensus</div><div style="text-align:right">Actual</div></div>'+empty+'</div>'+
+   '<div class="calMetrics">'+((e.metrics||[]).length?'<div class="calMetricHead"><div>Metric</div><div style="text-align:right">Previous</div><div style="text-align:right">Consensus</div><div style="text-align:right">Actual</div></div>':'')+empty+'</div>'+
    '<div class="calLinks"><a href="'+esc(e.detail_url||'#')+'" target="_blank" rel="noopener noreferrer">Official detail ↗</a><a href="'+esc(e.market_url||'https://tradingeconomics.com/united-states/calendar')+'" target="_blank" rel="noopener noreferrer">Calendar / consensus ↗</a></div>'+
   '</div>';
  }).join('');
- document.getElementById('cal').innerHTML=cards+'<div class="calFoot">Only market-moving U.S. macro releases are shown. Release timing/detail links use BLS, BEA, Census, ISM, ADP and Federal Reserve pages. Previous / consensus / actual fields come from the public economic-calendar snapshot; if survey consensus is not yet formed, the model forecast is shown separately rather than mislabeled as consensus.</div>';
+ document.getElementById('cal').innerHTML=cards+'<div class="calFoot">Only market-moving U.S. macro releases are shown. “Not formed” means no public survey consensus is available yet; a model forecast, when available, is shown separately and never relabeled as consensus.</div>';
 }
 async function loadData(force=false){document.getElementById('stamp').textContent='Loading latest snapshot…';try{const url='data/dashboard.json'+(force?'?v='+Date.now():'');let r=await fetch(url,{cache:force?'no-store':'default'});if(!r.ok)throw new Error('dashboard.json '+r.status);let d=await r.json();window.DATA=d;renderRegime(d);renderTakeaways(d);assetRows(d);renderRates(d);renderSimple(d);renderInternals(d);renderSectors(d);renderFactors(d);renderMovers(d);renderSignals(d);renderCalendar(d);renderCommentary(d);let t=new Date(d.meta.updated);document.getElementById('stamp').textContent='Snapshot '+t.toLocaleString('en-SG',{timeZone:'Asia/Singapore',hour12:false})+' SGT'}catch(e){document.getElementById('stamp').textContent='Snapshot unavailable';console.error(e)}}
 loadData(false);setInterval(()=>loadData(false),900000);
