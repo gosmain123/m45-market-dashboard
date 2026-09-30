@@ -1663,7 +1663,7 @@ def equity_etf_lens(symbols):
     return out
 
 def etf_lens_pack():
-    equity_syms=set(SECTOR_ETFS)|set(FACTOR_ETFS)|{'SPY','EFA','EEM','IWM','ACWI'}
+    equity_syms=set(SECTOR_ETFS)|set(FACTOR_ETFS)|{'SPY','QQQ','SOXX','EFA','EEM','IWM','ACWI','FEZ','EWU','EWJ','EWY','EWH','ASHR'}
     out=equity_etf_lens(equity_syms)
     out.update(bond_etf_characteristics())
     for sym in ('GLD','DBC'):
