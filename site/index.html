@@ -126,7 +126,7 @@ a{color:inherit}.top{position:sticky;top:0;z-index:30;background:rgba(255,255,25
 
 <div class="grid3">
 <section class="section">
-  <div class="sh"><div class="st">CREDIT</div><div class="sn">Spread level + change</div></div><div class="body" id="credit"></div>
+  <div class="sh"><div class="st">CREDIT · SAME-DAY PROXIES</div><div class="sn">LQD / HYG · quality and Treasury relative</div></div><div class="body" id="credit"></div>
 </section>
 <section class="section">
   <div class="sh"><div class="st">FX</div><div class="sn">USD / Japan / China</div></div><div class="body" id="fx"></div>
@@ -250,8 +250,15 @@ function auctionText(cal){let x=cal.find(e=>e.title&&/10-Year|20-Year|30-Year/.t
 function drawCurve(c){const svg=document.getElementById('curveSvg');let ks=['2Y','5Y','10Y','30Y'];if(!c['2Y']){svg.innerHTML='';return}let vals=[];ks.forEach(k=>{if(c[k]?.yield!=null)vals.push(c[k].yield);if(c[k]?.prev!=null)vals.push(c[k].prev);if(c[k]?.month!=null)vals.push(c[k].month)});let mn=Math.min(...vals)-.07,mx=Math.max(...vals)+.07;let X=i=>38+i*(684/3),Y=v=>112-(v-mn)/(mx-mn)*84;let path=f=>ks.map((k,i)=>`${i?'L':'M'} ${X(i)} ${Y(c[k]?.[f])}`).join(' ');let s=`<line x1="38" y1="112" x2="722" y2="112" stroke="#e1e5e9"/>`;s+=`<path d="${path('month')}" fill="none" stroke="#d4d9df" stroke-width="1.5"/><path d="${path('prev')}" fill="none" stroke="#9ca7b4" stroke-width="1.7"/><path d="${path('yield')}" fill="none" stroke="#244b75" stroke-width="2.5"/>`;ks.forEach((k,i)=>{s+=`<circle cx="${X(i)}" cy="${Y(c[k].yield)}" r="3" fill="#244b75"/><text x="${X(i)}" y="${Y(c[k].yield)-8}" text-anchor="middle" font-size="10" font-weight="700" fill="#182231">${n(c[k].yield,2)}%</text><text x="${X(i)}" y="130" text-anchor="middle" font-size="9" fill="#6e7886">${k}</text>`});svg.innerHTML=s}
 
 function renderSimple(d){
- const f=d.fred||{}, m=d.market||{};
- const cbp=(x)=>x===null||x===undefined?'—':bp(x*100); const creditDates=[f.ig_oas?.date,f.hy_oas?.date,f.ccc_oas?.date].filter(Boolean); const creditDate=creditDates[0]||'—'; const creditStale=[f.ig_oas,f.hy_oas,f.ccc_oas].some(x=>x?.stale); document.getElementById('credit').innerHTML=table3([['IG OAS',f.ig_oas?.value!==undefined?n(f.ig_oas.value*100,0)+' bp':'—',cbp(f.ig_oas?.['1d']),cbp(f.ig_oas?.['1m'])],['HY OAS',f.hy_oas?.value!==undefined?n(f.hy_oas.value*100,0)+' bp':'—',cbp(f.hy_oas?.['1d']),cbp(f.hy_oas?.['1m'])],['CCC OAS',f.ccc_oas?.value!==undefined?n(f.ccc_oas.value*100,0)+' bp':'—',cbp(f.ccc_oas?.['1d']),cbp(f.ccc_oas?.['1m'])]],['Spread','Δ prior','Δ ~1M'])+'<div class="sub" style="margin-top:7px;line-height:1.4">As of '+esc(creditDate)+(creditStale?' · latest available EOD / cached continuity':' · latest available EOD')+'</div>';
+ const f=d.fred||{}, m=d.market||{}, cp=d.credit_proxy||{};
+ const ig=cp.ig||{}, hy=cp.hy||{}, hi=cp.hy_vs_ig||{}, ht=cp.hy_vs_tsy||{};
+ const asof=hy.asof||ig.asof||'—';
+ document.getElementById('credit').innerHTML=table3([
+  ['IG Credit · LQD',ig.price!==undefined?'$'+n(ig.price,2):'—',pct(ig['1d']),pct(ig['1m'])],
+  ['HY Credit · HYG',hy.price!==undefined?'$'+n(hy.price,2):'—',pct(hy['1d']),pct(hy['1m'])],
+  ['HY vs IG','—',pct(hi['1d']),pct(hi['1m'])],
+  ['HY vs Treasuries','—',pct(ht['1d']),pct(ht['1m'])]
+ ],['Level','1D','1M'])+'<div class="sub" style="margin-top:7px;line-height:1.4">As of '+esc(asof)+' · positive relative return = riskier credit outperforming</div>';
  document.getElementById('fx').innerHTML=table3([['DXY',priceFmt('dxy',m.dxy?.price),pct(m.dxy?.['1d']),pct(m.dxy?.['1m'])],['USD/JPY',priceFmt('usdjpy',m.usdjpy?.price),pct(m.usdjpy?.['1d']),pct(m.usdjpy?.['1m'])],['EUR/USD',priceFmt('eurusd',m.eurusd?.price),pct(m.eurusd?.['1d']),pct(m.eurusd?.['1m'])],['USD/CNH',priceFmt('usdcnh',m.usdcnh?.price),pct(m.usdcnh?.['1d']),pct(m.usdcnh?.['1m'])]],['Level','1D','1M']);
  document.getElementById('commodities').innerHTML=table3([['Brent',priceFmt('brent',m.brent?.price),pct(m.brent?.['1d']),pct(m.brent?.['1m'])],['WTI',priceFmt('wti',m.wti?.price),pct(m.wti?.['1d']),pct(m.wti?.['1m'])],['Gold',priceFmt('gold',m.gold?.price),pct(m.gold?.['1d']),pct(m.gold?.['1m'])],['Copper',priceFmt('copper',m.copper?.price),pct(m.copper?.['1d']),pct(m.copper?.['1m'])]],['Level','1D','1M']);
 }
