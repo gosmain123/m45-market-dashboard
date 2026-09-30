@@ -384,42 +384,16 @@ def _cached_or_seed(key,label,seed):
     return out
 
 def fred_pack():
-    # Seed values are only a final continuity fallback. The UI keeps their as-of date visible.
-    seeds={
-      'ig_oas': {'value':0.79,'1d':0.02,'1m':-0.02,'date':'2026-09-24'},
-      'hy_oas': {'value':2.80,'1d':0.07,'1m':0.11,'date':'2026-09-24'},
-      'ccc_oas':{'value':11.12,'1d':0.19,'1m':0.76,'date':'2026-09-24'},
-    }
-    out={}
+    """Public-site macro pack. ICE OAS is intentionally not redistributed; credit uses liquid ETF proxies instead."""
     try:
-        out['real10']=treasury_real10()
+        return {'real10':treasury_real10()}
     except Exception:
         prev=_previous_snapshot().get('fred',{}).get('real10',{})
         if isinstance(prev,dict) and prev.get('value') is not None:
-            out['real10']={k:prev.get(k) for k in ('value','1d','1m','date')}
-            out['real10'].update({'label':'10Y Real Yield','stale':True,'source_status':'last-good cache'})
-        else:
-            out['real10']={'value':2.85,'1d':0.09,'1m':0.47,'date':'2026-09-24','label':'10Y Real Yield','stale':True,'source_status':'seed fallback'}
-
-    credit_map={
-      'ig_oas':('BAMLC0A0CM','IG OAS'),
-      'hy_oas':('BAMLH0A0HYM2','HY OAS'),
-      'ccc_oas':('BAMLH0A3HYC','CCC OAS'),
-    }
-    def one(key,sid,label):
-        try:
-            x=fred_history(sid)
-            x.update({'label':label,'source':'FRED / ICE BofA','stale':False})
-            return key,x
-        except Exception:
-            return key,_cached_or_seed(key,label,seeds[key])
-
-    with ThreadPoolExecutor(max_workers=3) as ex:
-        futs=[ex.submit(one,k,*v) for k,v in credit_map.items()]
-        for fut in as_completed(futs):
-            k,v=fut.result()
-            out[k]=v
-    return out
+            out={k:prev.get(k) for k in ('value','1d','1m','date')}
+            out.update({'label':'10Y Real Yield','stale':True,'source_status':'last-good cache'})
+            return {'real10':out}
+        return {'real10':{'value':2.85,'1d':0.09,'1m':0.47,'date':'2026-09-24','label':'10Y Real Yield','stale':True,'source_status':'seed fallback'}}
 
 def acm_term_premium():
     raw=req('https://www.newyorkfed.org/medialibrary/media/research/data_indicators/ACMTermPremium.xls',timeout=25).content
@@ -649,9 +623,10 @@ def top_takeaways(payload):
         else: out.append(f'S&P {sp:+.2f}% / Nasdaq {nd:+.2f}% / SOX {sox:+.2f}% — equity move is relatively broad.')
     # 2 rates
     out.append(rates_interpretation(c,payload['fred'],payload['acm']))
-    # 3 credit/risk
-    hy=(payload['fred'].get('hy_oas') or {}).get('1d'); ccc=(payload['fred'].get('ccc_oas') or {}).get('1d')
-    if hy is not None and ccc is not None: out.append(f'Credit: HY OAS {hy*100:+.0f}bp / CCC OAS {ccc*100:+.0f}bp on latest available day — stress is {"moving down-quality" if ccc>hy else "not concentrated in CCC"}.')
+    # 3 credit/risk — same-day liquid ETF proxy for the public dashboard
+    cp=payload.get('credit_proxy',{}); hyig=(cp.get('hy_vs_ig') or {}).get('1d')
+    if hyig is not None:
+        out.append(f'Credit proxy: HYG vs LQD {hyig:+.2f}% 1D — ' + ('HY is underperforming IG, a same-day risk warning.' if hyig<0 else 'HY is outperforming IG, so credit beta is not confirming stress.'))
     # 4 mover — only show a stock-specific takeaway when a catalyst is actually supported.
     if movers and movers[0].get('explanation'):
         out.append(f'{movers[0]["display"]} {movers[0]["move"]:+.2f}% — {movers[0]["explanation"]}')
@@ -667,7 +642,7 @@ def top_takeaways(payload):
 def build_commentary(payload):
     """Build a detailed daily desk commentary that explains the whole day, not just the numbers."""
     m=payload.get('market',{}); c=payload.get('curve',{}); f=payload.get('fred',{})
-    acm=payload.get('acm',{}); be=payload.get('breakeven',{})
+    acm=payload.get('acm',{}); be=payload.get('breakeven',{}); cp=payload.get('credit_proxy',{})
     sectors=payload.get('sectors',[]); factors=payload.get('factors',[])
     core=payload.get('core_tape',[]); broad=payload.get('broad_movers',[])
     signals=payload.get('signals',[]); cal=payload.get('calendar',[])
@@ -901,14 +876,14 @@ def build_commentary(payload):
     if None not in (y2,y10,y30):
         meeting.append(f'Rates were more important: 2Y {bps(y2)}, 10Y {bps(y10)} and 30Y {bps(y30)}.')
         if y2<0<y10: meeting.append('Because the front end rallied while the long end sold off, the move looks more like long-duration / term-premium pressure than a simple hawkish-Fed repricing.')
-    credit_date=(f.get('hy_oas') or {}).get('date') or (f.get('ig_oas') or {}).get('date')
-    credit_stale=any(bool((f.get(k) or {}).get('stale')) for k in ('ig_oas','hy_oas','ccc_oas'))
-    if None not in (ig,hy,ccc):
-        if credit_stale:
-            meeting.append(f'Credit is a lagged cross-check: as of {credit_date}, IG changed {bps(ig*100)}, HY {bps(hy*100)} and CCC {bps(ccc*100)} versus the prior observation.')
+    hyig=(cp.get('hy_vs_ig') or {}).get('1d'); cp_date=(cp.get('hy') or {}).get('asof') or (cp.get('ig') or {}).get('asof')
+    if hyig is not None:
+        if hyig<-0.20:
+            meeting.append(f'Credit confirmed some stress: HYG underperformed LQD by {abs(hyig):.2f}% on {cp_date}.')
+        elif hyig>0.20:
+            meeting.append(f'Credit did not confirm broad stress: HYG outperformed LQD by {hyig:.2f}% on {cp_date}.')
         else:
-            meeting.append(f'Credit was a caution signal, with IG {bps(ig*100)}, HY {bps(hy*100)} and CCC {bps(ccc*100)} on the latest observation.')
-            if ccc>hy>ig: meeting.append('The fact that widening gets larger down the quality stack matters because it suggests funding / default risk is becoming more relevant.')
+            meeting.append(f'Credit was broadly neutral: HYG versus LQD was {hyig:+.2f}% on {cp_date}.')
     if brent is not None:
         if brent>1:
             meeting.append(f'Brent rose {pct(brent)}, keeping the inflation tail relevant for long-duration assets.')
@@ -1006,26 +981,25 @@ def build_commentary(payload):
         rate_state='supportive'; rate_text+=' Falling long yields are a cleaner valuation tailwind.'
     story_branches.append({'title':'Rates branch · what actually repriced','body':rate_text,'tone':rate_state,'tag':'RATES'})
 
-    # Branch 3: credit confirmation
-    credit_date=(f.get('hy_oas') or {}).get('date') or (f.get('ig_oas') or {}).get('date')
-    credit_stale=any(bool((f.get(k) or {}).get('stale')) for k in ('ig_oas','hy_oas','ccc_oas'))
-    if None not in (iglvl,hylvl,ccclvl):
-        cr_text=f'As of {credit_date or "latest available"}: IG {iglvl*100:.0f} bp, HY {hylvl*100:.0f} bp, CCC {ccclvl*100:.0f} bp.'
-        if None not in (ig,hy,ccc):
-            cr_text+=f' Change versus the prior observation: IG {ig*100:+.0f} bp, HY {hy*100:+.0f} bp, CCC {ccc*100:+.0f} bp.'
-            if credit_stale:
-                cr_state='mixed'; cr_text+=' This is a lagged EOD cross-check, not same-day confirmation of today’s equity/rates move.'
-            elif ccc>hy>ig:
-                cr_state='warning'; cr_text+=' Widening increases down-quality, so credit is confirming a more fundamental risk signal.'
-            elif hy<=0 and ccc<=0:
-                cr_state='supportive'; cr_text+=' Credit is not confirming stress, which keeps the broader story closer to rates / positioning than funding deterioration.'
-            else:
-                cr_state='mixed'; cr_text+=' Credit confirmation is partial rather than decisive.'
+    # Branch 3: credit confirmation — same-day, liquid, public-market proxy
+    hyig=(cp.get('hy_vs_ig') or {}).get('1d'); hyig1m=(cp.get('hy_vs_ig') or {}).get('1m')
+    hytsy=(cp.get('hy_vs_tsy') or {}).get('1d')
+    hyg1d=(cp.get('hy') or {}).get('1d'); lqd1d=(cp.get('ig') or {}).get('1d')
+    cp_date=(cp.get('hy') or {}).get('asof') or (cp.get('ig') or {}).get('asof')
+    if hyig is not None:
+        cr_text=f'As of {cp_date or "latest"}: HYG {pct(hyg1d)} versus LQD {pct(lqd1d)}; HY minus IG relative return {hyig:+.2f}% 1D'
+        if hyig1m is not None: cr_text+=f' and {hyig1m:+.2f}% over one month'
+        if hytsy is not None: cr_text+=f'. HYG versus intermediate Treasuries was {hytsy:+.2f}% 1D'
+        cr_text+='.'
+        if hyig<-0.20:
+            cr_state='warning'; cr_text+=' High yield is underperforming investment grade enough to count as same-day credit-risk confirmation.'
+        elif hyig>0.20:
+            cr_state='supportive'; cr_text+=' High yield is outperforming investment grade, so credit beta is not confirming a broad risk-off move.'
         else:
-            cr_state='mixed'; cr_text+=' Spread levels are available, but daily confirmation is limited.'
+            cr_state='mixed'; cr_text+=' The credit-quality spread is close to neutral, so credit is not a decisive branch today.'
     else:
-        cr_state='mixed'; cr_text='Credit is being carried from the latest available EOD observation; the dashboard keeps the as-of date visible rather than converting missing data into a false zero.'
-    story_branches.append({'title':'Credit branch · did the move become a risk event?','body':cr_text,'tone':cr_state,'tag':'CREDIT'})
+        cr_state='mixed'; cr_text='Same-day HYG/LQD credit proxy was unavailable; the storyline does not infer a credit signal.'
+    story_branches.append({'title':'Credit branch · did risky credit confirm?','body':cr_text,'tone':cr_state,'tag':'CREDIT'})
 
     # Branch 4: macro cross-check
     macro_state='mixed'
@@ -1046,7 +1020,7 @@ def build_commentary(payload):
     if y2 is not None and y10 is not None and y2<0<y10 and None not in (sox,ndx) and sox>ndx+0.75:
         resolution_title='The day landed on a split regime: long-end macro pressure, but concentrated AI strength'
         resolution_body=('The branches do not fully converge into either risk-on or risk-off. Long-duration rates remain a headwind, yet semiconductor leadership shows that the market is still willing to pay for visible AI / compute earnings. '
-                         'That makes breadth the immediate tie-breaker. Credit remains an important secondary check, but only once a same-day or newly updated EOD observation is available.')
+                         'That makes breadth and same-day HYG-versus-LQD performance the immediate tie-breakers: broader equity participation plus resilient high yield would support expansion of the theme; weaker breadth plus HY underperformance would make concentrated leadership more fragile.')
     elif None not in (hy,ccc) and hy>0 and ccc>hy and spx is not None and spx<0:
         resolution_title='The day finished as a broader risk-off move'
         resolution_body=('Equity weakness was accompanied by worsening lower-quality credit, so the signal moved beyond valuation alone. The market was asking for more compensation for both duration and balance-sheet risk.')
@@ -1190,7 +1164,17 @@ def build_dashboard():
     signals=tactical_signals(histories,regime)
     sectors=sectors_pack(histories)
     factors=factors_pack(histories)
-    payload={'market':market,'curve':curve,'fred':fred,'acm':fp.get('acm',{}),'cvol':fp.get('cvol',{}),'fedwatch':fp.get('fedwatch',{}),'calendar':fp.get('calendar',[]),
+    lqd=histories.get('LQD') or {}; hyg=histories.get('HYG') or {}; ief=histories.get('IEF') or {}
+    def relret(a,b,key):
+        av=a.get(key); bv=b.get(key)
+        return None if av is None or bv is None else av-bv
+    credit_proxy={
+      'ig':{'symbol':'LQD','price':lqd.get('price'),'1d':lqd.get('1d'),'1m':lqd.get('1m'),'asof':lqd.get('asof')},
+      'hy':{'symbol':'HYG','price':hyg.get('price'),'1d':hyg.get('1d'),'1m':hyg.get('1m'),'asof':hyg.get('asof')},
+      'hy_vs_ig':{'1d':relret(hyg,lqd,'1d'),'1m':relret(hyg,lqd,'1m'),'asof':hyg.get('asof') or lqd.get('asof')},
+      'hy_vs_tsy':{'1d':relret(hyg,ief,'1d'),'1m':relret(hyg,ief,'1m'),'asof':hyg.get('asof') or ief.get('asof')}
+    }
+    payload={'market':market,'curve':curve,'fred':fred,'credit_proxy':credit_proxy,'acm':fp.get('acm',{}),'cvol':fp.get('cvol',{}),'fedwatch':fp.get('fedwatch',{}),'calendar':fp.get('calendar',[]),
              'movers':movers,'core_tape':core_tape,'broad_movers':broad_movers,'sectors':sectors,'factors':factors,'signals':signals,'regime':regime,'breakeven':breakeven}
     payload['takeaways']=top_takeaways(payload)
     payload['commentary']=build_commentary(payload)
