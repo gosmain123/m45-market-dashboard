@@ -219,7 +219,7 @@ function renderRegime(d){
  const riskLabel=risk>=25?'RISK-ON':risk<=-25?'RISK-OFF':'BALANCED';
  const curve=curveName(d.curve||{});
  document.getElementById('regime').innerHTML=`
- <div class="regcell"><div class="regtitle">Market regime</div><div class="regbig">${riskLabel}</div><div class="regdesc">Cross-asset risk appetite ${risk>=0?'+':''}${risk}/100 · curve: ${curve}</div></div>
+ <div class="regcell"><div class="regtitle">Model regime</div><div class="regbig">${riskLabel}</div><div class="regdesc">Heuristic cross-asset composite · risk ${risk>=0?'+':''}${risk}/100 · curve: ${curve}</div></div>
  ${regGauge('Risk appetite',risk,risk>=25?'Constructive':risk<=-25?'Defensive':'Mixed')}
  ${regGauge('Growth impulse',growth,growth>=25?'Cyclicals leading':growth<=-25?'Defensives leading':'Balanced')}
  ${regGauge('Inflation pressure',inf,inf>=25?'Rising':inf<=-25?'Easing':'Stable')}`;
