@@ -901,10 +901,21 @@ def build_commentary(payload):
     if None not in (y2,y10,y30):
         meeting.append(f'Rates were more important: 2Y {bps(y2)}, 10Y {bps(y10)} and 30Y {bps(y30)}.')
         if y2<0<y10: meeting.append('Because the front end rallied while the long end sold off, the move looks more like long-duration / term-premium pressure than a simple hawkish-Fed repricing.')
+    credit_date=(f.get('hy_oas') or {}).get('date') or (f.get('ig_oas') or {}).get('date')
+    credit_stale=any(bool((f.get(k) or {}).get('stale')) for k in ('ig_oas','hy_oas','ccc_oas'))
     if None not in (ig,hy,ccc):
-        meeting.append(f'Credit was a caution signal, with IG {bps(ig*100)}, HY {bps(hy*100)} and CCC {bps(ccc*100)} on the latest observation.')
-        if ccc>hy>ig: meeting.append('The fact that widening gets larger down the quality stack matters because it suggests funding / default risk is becoming more relevant.')
-    if brent is not None: meeting.append(f'Brent moved {pct(brent)}, keeping the inflation backdrop relevant for long-duration assets.')
+        if credit_stale:
+            meeting.append(f'Credit is a lagged cross-check: as of {credit_date}, IG changed {bps(ig*100)}, HY {bps(hy*100)} and CCC {bps(ccc*100)} versus the prior observation.')
+        else:
+            meeting.append(f'Credit was a caution signal, with IG {bps(ig*100)}, HY {bps(hy*100)} and CCC {bps(ccc*100)} on the latest observation.')
+            if ccc>hy>ig: meeting.append('The fact that widening gets larger down the quality stack matters because it suggests funding / default risk is becoming more relevant.')
+    if brent is not None:
+        if brent>1:
+            meeting.append(f'Brent rose {pct(brent)}, keeping the inflation tail relevant for long-duration assets.')
+        elif brent<-1:
+            meeting.append(f'Brent fell {pct(brent)}, which offsets part of the inflation pressure and adds a softer growth / demand signal.')
+        else:
+            meeting.append(f'Brent was little changed at {pct(brent)}, so oil did not materially change the macro read.')
     if core:
         biggest=max(core,key=lambda x:abs(x.get('move') or 0))
         meeting.append(f'The largest core-stock move was {biggest["display"]} {biggest["move"]:+.2f}%.')
@@ -996,11 +1007,15 @@ def build_commentary(payload):
     story_branches.append({'title':'Rates branch · what actually repriced','body':rate_text,'tone':rate_state,'tag':'RATES'})
 
     # Branch 3: credit confirmation
+    credit_date=(f.get('hy_oas') or {}).get('date') or (f.get('ig_oas') or {}).get('date')
+    credit_stale=any(bool((f.get(k) or {}).get('stale')) for k in ('ig_oas','hy_oas','ccc_oas'))
     if None not in (iglvl,hylvl,ccclvl):
-        cr_text=f'IG {iglvl*100:.0f} bp, HY {hylvl*100:.0f} bp, CCC {ccclvl*100:.0f} bp.'
+        cr_text=f'As of {credit_date or "latest available"}: IG {iglvl*100:.0f} bp, HY {hylvl*100:.0f} bp, CCC {ccclvl*100:.0f} bp.'
         if None not in (ig,hy,ccc):
-            cr_text+=f' Latest changes: IG {ig*100:+.0f} bp, HY {hy*100:+.0f} bp, CCC {ccc*100:+.0f} bp.'
-            if ccc>hy>ig:
+            cr_text+=f' Change versus the prior observation: IG {ig*100:+.0f} bp, HY {hy*100:+.0f} bp, CCC {ccc*100:+.0f} bp.'
+            if credit_stale:
+                cr_state='mixed'; cr_text+=' This is a lagged EOD cross-check, not same-day confirmation of today’s equity/rates move.'
+            elif ccc>hy>ig:
                 cr_state='warning'; cr_text+=' Widening increases down-quality, so credit is confirming a more fundamental risk signal.'
             elif hy<=0 and ccc<=0:
                 cr_state='supportive'; cr_text+=' Credit is not confirming stress, which keeps the broader story closer to rates / positioning than funding deterioration.'
@@ -1031,7 +1046,7 @@ def build_commentary(payload):
     if y2 is not None and y10 is not None and y2<0<y10 and None not in (sox,ndx) and sox>ndx+0.75:
         resolution_title='The day landed on a split regime: long-end macro pressure, but concentrated AI strength'
         resolution_body=('The branches do not fully converge into either risk-on or risk-off. Long-duration rates remain a headwind, yet semiconductor leadership shows that the market is still willing to pay for visible AI / compute earnings. '
-                         'That makes breadth and credit the tie-breakers: if they improve, the theme can broaden; if they deteriorate, concentrated leadership becomes more fragile.')
+                         'That makes breadth the immediate tie-breaker. Credit remains an important secondary check, but only once a same-day or newly updated EOD observation is available.')
     elif None not in (hy,ccc) and hy>0 and ccc>hy and spx is not None and spx<0:
         resolution_title='The day finished as a broader risk-off move'
         resolution_body=('Equity weakness was accompanied by worsening lower-quality credit, so the signal moved beyond valuation alone. The market was asking for more compensation for both duration and balance-sheet risk.')
