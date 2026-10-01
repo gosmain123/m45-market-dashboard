@@ -848,8 +848,18 @@ def build_risk_regime(histories, market, fred):
     return {'risk':clip(risk),'growth':clip(growth),'inflation':clip(inf)}
 
 def tactical_signals(histories, regime, etf_lens=None):
+    """Systematic tactical score plus transparent change attribution.
+
+    Change fields compare with the previous published dashboard snapshot. score_history
+    stores one observation per underlying market session so the UI can build a clean
+    history without treating every intraday refresh as a new data point.
+    """
     out=[]
     risk=regime['risk']; inflation=regime['inflation']
+    prev=_previous_snapshot()
+    prevmap={r.get('symbol'):r for r in (prev.get('signals') or []) if r.get('symbol')}
+    prev_market_asof=((prev.get('market') or {}).get('spx') or {}).get('asof')
+
     for sym,(name,cls_,bench) in TACTICAL_ASSETS.items():
         m=histories.get(sym)
         if not m: continue
@@ -864,14 +874,60 @@ def tactical_signals(histories, regime, etf_lens=None):
         elif cls_=='Rates': macro=(-0.55*risk - 0.45*inflation)
         elif cls_=='Real Asset': macro=(-0.25*risk + 0.75*inflation) if sym=='GLD' else (0.35*risk+0.65*inflation)
         else: macro=-0.65*risk
-        score=100*(0.50*trend+0.25*rel+0.25*macro)
-        score=max(-100,min(100,score))
+
+        contrib={'trend':50*trend,'relative':25*rel,'macro':25*macro}
+        score=max(-100,min(100,sum(contrib.values())))
         view='OVERWEIGHT' if score>=25 else 'UNDERWEIGHT' if score<=-25 else 'NEUTRAL'
-        comps={'Trend':50*trend,'Relative':25*rel,'Macro':25*macro}
-        top=max(comps,key=lambda k:abs(comps[k]))
-        driver=f'{top} {"supportive" if comps[top]>=0 else "negative"}'
-        out.append({'symbol':sym,'name':name,'class':cls_,'view':view,'score':round(score,1),'1d':m.get('1d'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'ytd':m.get('ytd'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'vol':m.get('vol60'),'driver':driver,
-                    'trend':round(100*trend,1),'relative':round(100*rel,1),'macro':round(100*macro,1),'lens':(etf_lens or {}).get(sym,{})})
+        top=max(contrib,key=lambda k:abs(contrib[k]))
+        driver=f'{top.title()} {"supportive" if contrib[top]>=0 else "negative"}'
+
+        p=prevmap.get(sym) or {}
+        prior_score=fnum(p.get('score'))
+        prior_contrib={
+            'trend':fnum(p.get('contrib_trend')),
+            'relative':fnum(p.get('contrib_relative')),
+            'macro':fnum(p.get('contrib_macro'))
+        }
+        # Backward compatibility for snapshots written before contribution fields existed.
+        if prior_contrib['trend'] is None and p.get('trend') is not None:
+            prior_contrib['trend']=0.50*fnum(p.get('trend'))
+        if prior_contrib['relative'] is None and p.get('relative') is not None:
+            prior_contrib['relative']=0.25*fnum(p.get('relative'))
+        if prior_contrib['macro'] is None and p.get('macro') is not None:
+            prior_contrib['macro']=0.25*fnum(p.get('macro'))
+
+        score_change=(score-prior_score) if prior_score is not None else None
+        delta_contrib={
+            k:(contrib[k]-prior_contrib[k] if prior_contrib[k] is not None else None)
+            for k in contrib
+        }
+
+        session=m.get('asof') or sgt_now().date().isoformat()
+        history=list(p.get('score_history') or [])
+        if not history and prior_score is not None and prev_market_asof:
+            history=[{'date':prev_market_asof,'score':round(prior_score,1)}]
+        entry={'date':session,'score':round(score,1)}
+        if history and history[-1].get('date')==session:
+            history[-1]=entry
+        else:
+            history.append(entry)
+        history=history[-60:]
+
+        out.append({
+            'symbol':sym,'name':name,'class':cls_,'view':view,'score':round(score,1),
+            'prior_score':round(prior_score,1) if prior_score is not None else None,
+            'score_change':round(score_change,1) if score_change is not None else None,
+            'change_basis':'prior published snapshot',
+            'asof':session,'score_history':history,
+            '1d':m.get('1d'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'ytd':m.get('ytd'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),
+            'vol':m.get('vol60'),'driver':driver,
+            'trend':round(100*trend,1),'relative':round(100*rel,1),'macro':round(100*macro,1),
+            'contrib_trend':round(contrib['trend'],1),'contrib_relative':round(contrib['relative'],1),'contrib_macro':round(contrib['macro'],1),
+            'delta_trend':round(delta_contrib['trend'],1) if delta_contrib['trend'] is not None else None,
+            'delta_relative':round(delta_contrib['relative'],1) if delta_contrib['relative'] is not None else None,
+            'delta_macro':round(delta_contrib['macro'],1) if delta_contrib['macro'] is not None else None,
+            'lens':(etf_lens or {}).get(sym,{})
+        })
     return out
 
 # ---------------- INTERPRETATION ----------------
@@ -925,6 +981,133 @@ def top_takeaways(payload):
                 detail=f" · {m0.get('name')}: model f/c {m0.get('forecast')}"
         out.append(f"Next catalyst: {nxt.get('title')} · {nxt.get('date')} {nxt.get('time')} SGT{detail}.")
     return out[:4]
+
+
+def morning_snapshot(payload):
+    """Compact decision layer built only from fields already present in the dashboard.
+
+    The text is rule-based. Official Treasury / Fed-family sources are preferred for
+    rates and macro; liquid market prices remain a public market-data feed.
+    """
+    m=payload.get('market') or {}; c=payload.get('curve') or {}; fred=payload.get('fred') or {}
+    acm=payload.get('acm') or {}; cp=payload.get('credit_proxy') or {}
+    regime=payload.get('regime') or {}; factors=payload.get('factors') or []; sectors=payload.get('sectors') or []
+
+    risk=regime.get('risk') or 0; growth=regime.get('growth') or 0; inflation=regime.get('inflation') or 0
+    risk_txt='Risk supportive' if risk>0.30 else 'Risk cautious' if risk<-0.30 else 'Mixed risk'
+    growth_txt='growth broadening' if growth>0.25 else 'defensive growth' if growth<-0.25 else 'growth mixed'
+    inflation_txt='inflation pressure' if inflation>0.25 else 'disinflationary impulse' if inflation<-0.25 else 'inflation neutral'
+    regime_value=f'{risk_txt} / {growth_txt}'
+
+    y10=(c.get('10Y') or {}).get('bp1d'); real=(fred.get('real10') or {}).get('1d'); tp=acm.get('bp1d')
+    rate_bits=[]
+    if y10 is not None: rate_bits.append(f'10Y {y10:+.0f}bp')
+    if real is not None: rate_bits.append(f'Real {real*100:+.0f}bp')
+    rates_value=' · '.join(rate_bits) if rate_bits else 'Rates data n.a.'
+
+    vix=(m.get('vix') or {}).get('price'); vixd=(m.get('vix') or {}).get('1d')
+    hyig=(cp.get('hy_vs_ig') or {}).get('1d')
+    risk_bits=[]
+    if vix is not None: risk_bits.append(f'VIX {vix:.1f}')
+    if hyig is not None: risk_bits.append(f'HY/IG {hyig:+.2f}%')
+    risk_value=' · '.join(risk_bits) if risk_bits else 'Risk data n.a.'
+
+    sox=(m.get('sox') or {}).get('1d'); ndx=(m.get('nasdaq') or {}).get('1d')
+    semirel=(sox-ndx) if sox is not None and ndx is not None else None
+    if semirel is not None and semirel>0.50: leadership='Semis leading'
+    elif semirel is not None and semirel<-0.50: leadership='Semis lagging'
+    else:
+        leader=next((x for x in sectors if x.get('1d') is not None),None)
+        leadership=f"{leader.get('name')} leading" if leader else 'Leadership mixed'
+
+    tiles=[
+        {'label':'MARKET REGIME','value':regime_value,'detail':inflation_txt},
+        {'label':'RATES','value':rates_value,'detail':f"ACM TP {tp:+.0f}bp" if tp is not None else 'ACM term premium n.a.'},
+        {'label':'RISK','value':risk_value,'detail':f"VIX {vixd:+.2f}% 1D" if vixd is not None else 'Cross-asset confirmation'},
+        {'label':'LEADERSHIP','value':leadership,'detail':f"SOX vs Nasdaq {semirel:+.2f}%" if semirel is not None else 'Sector / factor breadth'}
+    ]
+
+    changed=[]
+    if y10 is not None and real is not None:
+        rb=real*100
+        if abs(y10)>=2 and (y10==0 or rb==0 or (y10>0)==(rb>0)) and abs(rb)>=0.45*abs(y10):
+            changed.append(f'Long-end move was primarily real-yield driven: 10Y {y10:+.0f}bp, real yield {rb:+.0f}bp.')
+        else:
+            changed.append(f'Rates repriced across components: 10Y {y10:+.0f}bp, real yield {rb:+.0f}bp.')
+    ew=next((x for x in factors if x.get('name')=='Equal Weight'),{})
+    sp=(m.get('spx') or {}).get('1d'); ew1=ew.get('1d')
+    if sp is not None and ew1 is not None:
+        gap=ew1-sp
+        changed.append(f'Breadth {"improved" if gap>0.25 else "weakened" if gap<-0.25 else "was broadly stable"}: equal-weight vs S&P {gap:+.2f}%.')
+    if semirel is not None:
+        changed.append(f'Semiconductor leadership vs Nasdaq was {semirel:+.2f}% on the latest session.')
+    if hyig is not None:
+        changed.append(f'Credit beta {"confirmed risk appetite" if hyig>0.10 else "confirmed stress" if hyig<-0.10 else "was broadly neutral"}: HYG vs LQD {hyig:+.2f}%.')
+
+    if y10 is not None and real is not None and abs(real*100)>=4:
+        why='The rates impulse matters most because the real-yield component directly changes the discount rate applied to long-duration assets.'
+    elif semirel is not None and abs(semirel)>=0.75:
+        why='Leadership is unusually concentrated, so index direction alone understates the dispersion underneath the market.'
+    elif hyig is not None and abs(hyig)>=0.20:
+        why='Credit is providing a cleaner confirmation test than equities alone because lower-quality beta is moving materially versus IG.'
+    else:
+        why='No single cross-asset driver dominates; read breadth, credit and the curve together rather than forcing one narrative.'
+
+    nxt=[]
+    cal=payload.get('calendar') or []
+    for e in [x for x in cal if x.get('status')!='RELEASED'][:2]:
+        nxt.append({'time':e.get('time'),'title':e.get('title'),'date':e.get('date'),'source':e.get('source'),'url':e.get('detail_url')})
+    longauc=next((x for x in (payload.get('auctions') or []) if x.get('long_end')),None)
+    if longauc:
+        nxt.append({'time':longauc.get('time'),'title':f"{longauc.get('term')} Treasury auction",'date':longauc.get('date'),'source':'U.S. Treasury / TreasuryDirect','url':'https://www.treasurydirect.gov/auctions/upcoming/'})
+
+    return {
+        'tiles':tiles,'what_changed':changed[:3],'why':why,'next':nxt[:3],
+        'sources':[
+            {'name':'U.S. Treasury','url':'https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics/','asof':c.get('date')},
+            {'name':'New York Fed ACM','url':'https://www.newyorkfed.org/research/data_indicators/term-premia-tabs','asof':acm.get('date')},
+            {'name':'Official release calendars','url':'https://www.bls.gov/schedule/','asof':'scheduled releases'},
+            {'name':'Public market-price feed','url':'https://finance.yahoo.com/','asof':((m.get('spx') or {}).get('asof'))}
+        ]
+    }
+
+
+def story_evidence_layers(payload):
+    """Separate observed facts from interpretation and conditional market implication."""
+    m=payload.get('market') or {}; c=payload.get('curve') or {}; fred=payload.get('fred') or {}
+    cp=payload.get('credit_proxy') or {}
+    y10=(c.get('10Y') or {}).get('bp1d'); rb=(fred.get('real10') or {}).get('1d')
+    sp=(m.get('spx') or {}).get('1d'); nd=(m.get('nasdaq') or {}).get('1d'); sox=(m.get('sox') or {}).get('1d')
+    hyig=(cp.get('hy_vs_ig') or {}).get('1d')
+
+    facts=[]
+    if y10 is not None: facts.append(f'10Y Treasury {y10:+.0f}bp')
+    if rb is not None: facts.append(f'10Y real yield {rb*100:+.0f}bp')
+    if sp is not None: facts.append(f'S&P {sp:+.2f}%')
+    if sox is not None and nd is not None: facts.append(f'SOX vs Nasdaq {sox-nd:+.2f}%')
+    if hyig is not None: facts.append(f'HYG vs LQD {hyig:+.2f}%')
+
+    interpretation='Cross-asset signals are mixed; no single causal explanation is strong enough to dominate.'
+    implication='Use the next macro release, Treasury supply and credit response as confirmation tests rather than extrapolating the headline index move.'
+    if y10 is not None and rb is not None and abs(y10)>=2 and (y10>0)==(rb>0) and abs(rb*100)>=0.45*abs(y10):
+        interpretation='The long-end move appears predominantly real-rate driven rather than an inflation-compensation-only move.'
+        implication='If real yields stay elevated, long-duration equities and other rate-sensitive assets face a tighter valuation backdrop; credit and breadth should confirm whether this becomes broader risk stress.'
+    elif hyig is not None and hyig<-0.20:
+        interpretation='Risk weakness is being confirmed by lower-quality credit rather than remaining an equity-only move.'
+        implication='Continued HY underperformance would increase confidence that the move is broadening from valuation/positioning into funding-risk sensitivity.'
+    elif sox is not None and nd is not None and abs(sox-nd)>=1.0:
+        interpretation='Equity leadership is concentrated enough that semiconductor-specific forces are materially different from broad tech beta.'
+        implication='Treat headline Nasdaq direction cautiously until equal-weight breadth and non-semi cyclicals either confirm or reject the leadership move.'
+
+    return {
+        'fact':' · '.join(facts) if facts else 'Observed market facts unavailable.',
+        'interpretation':interpretation,
+        'implication':implication,
+        'sources':[
+            {'name':'U.S. Treasury','asof':c.get('date'),'url':'https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics/'},
+            {'name':'Public market-price feed','asof':((m.get('spx') or {}).get('asof')),'url':'https://finance.yahoo.com/'}
+        ]
+    }
 
 
 def build_commentary(payload):
@@ -1759,27 +1942,91 @@ def stock_monitor_pack():
     hist=load_symbol_set(set(WATCHLIST)|set(BROAD_WATCHLIST)|core_benches|broad_benches)
     valuations=yahoo_valuation_pack(set(WATCHLIST)|set(BROAD_WATCHLIST))
     core_details=yahoo_fundamental_detail_pack(set(WATCHLIST))
+    prev=_previous_snapshot()
+    prev_core={r.get('symbol'):r for r in (prev.get('core_tape') or []) if r.get('symbol')}
+    prev_market_asof=((prev.get('market') or {}).get('spx') or {}).get('asof')
+
     core=[]; material=[]
     for sym,(company,group,bench) in WATCHLIST.items():
         m=hist.get(sym); b=hist.get(bench)
         if not m or m.get('1d') is None: continue
         rel=m['1d']-(b.get('1d') or 0) if b else None
+        val=choose_valuation(sym,merge_valuation(valuations.get(sym),core_details.get(sym)))
+        p=prev_core.get(sym) or {}; pv=p.get('valuation') or {}
+
+        flags=[]
+        if abs(m['1d'])>=1.5 or abs(m.get('1w') or 0)>=4.0:
+            flags.append('PRICE')
+        if abs(rel or 0)>=1.0:
+            flags.append('RELATIVE')
+
+        cur_rev=fnum(val.get('eps_revision_30d')); prev_rev=fnum(pv.get('eps_revision_30d'))
+        revision_delta=(cur_rev-prev_rev) if cur_rev is not None and prev_rev is not None else None
+        if revision_delta is not None and abs(revision_delta)>=0.50:
+            flags.append('REVISION')
+
+        cur_val=fnum(val.get('value')); prev_val=fnum(pv.get('value'))
+        valuation_delta=None
+        if cur_val is not None and prev_val not in (None,0) and val.get('metric')==pv.get('metric'):
+            valuation_delta=(cur_val/prev_val-1)*100
+            if abs(valuation_delta)>=2.50:
+                flags.append('VALUATION')
+
         score=mover_score(m,rel)
-        flag=(abs(m['1d'])>=1.5 or abs(rel or 0)>=1.0 or abs(m.get('1w') or 0)>=4.0)
+        if revision_delta is not None:
+            score+=0.30*min(abs(revision_delta),3.0)
+        if valuation_delta is not None:
+            score+=0.08*min(abs(valuation_delta),6.0)
+        flag=bool(flags)
+
+        # Build our own clean primary-valuation history. One observation per market
+        # session; this becomes the reliable source for percentiles over time.
+        vh=list(p.get('valuation_history') or [])
+        if not vh and prev_val is not None and pv.get('metric') and prev_market_asof:
+            vh=[{'date':prev_market_asof,'metric':pv.get('metric'),'value':round(prev_val,4)}]
+        if cur_val is not None and val.get('metric') and val.get('metric')!='N/M':
+            ent={'date':m.get('asof') or sgt_now().date().isoformat(),'metric':val.get('metric'),'value':round(cur_val,4)}
+            if vh and vh[-1].get('date')==ent['date'] and vh[-1].get('metric')==ent['metric']:
+                vh[-1]=ent
+            else:
+                vh.append(ent)
+        vh=vh[-260:]
+        same=[x for x in vh if x.get('metric')==val.get('metric') and x.get('value') is not None]
+        if same:
+            vals=sorted(float(x['value']) for x in same)
+            med=vals[len(vals)//2] if len(vals)%2 else (vals[len(vals)//2-1]+vals[len(vals)//2])/2
+            val['history_n']=len(vals)
+            val['history_median']=med
+            val['history_start']=same[0].get('date')
+            if len(vals)>=20 and cur_val is not None:
+                val['history_percentile']=100*sum(1 for x in vals if x<=cur_val)/len(vals)
+            else:
+                val['history_percentile']=None
+
         expl=''; link=''; conf='Monitor'
-        if flag:
+        if flag and ('PRICE' in flags or 'RELATIVE' in flags):
             news=yahoo_news(sym,company)
             if news:
                 category=classify_driver(news[0]['title'])
                 if category!='Company / sector news':
                     expl=f'{category}: {news[0]["title"]}'
                     link=news[0]['link']; conf='Headline-linked'
-        row={'symbol':sym,'display':sym.replace('.KS',''),'company':company,'group':group,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'ytd':m.get('ytd'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'since_start':m.get('since_start'),'history_start':m.get('history_start'),'relative':rel,'score':score,'material':flag,'explanation':expl,'link':link,'confidence':conf,'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,merge_valuation(valuations.get(sym),core_details.get(sym)))}
+
+        row={
+            'symbol':sym,'display':sym.replace('.KS',''),'company':company,'group':group,
+            'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'ytd':m.get('ytd'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),
+            'since_start':m.get('since_start'),'history_start':m.get('history_start'),'asof':m.get('asof'),
+            'relative':rel,'score':score,'material':flag,'flags':flags,
+            'revision_change':revision_delta,'valuation_change_pct':valuation_delta,'valuation_history':vh,
+            'explanation':expl,'link':link,'confidence':conf,'quality_issue':m.get('quality_issue'),'valuation':val
+        }
         core.append(row)
         if flag: material.append(row)
+
     rank={g:i for i,g in enumerate(CORE_GROUP_ORDER)}
     core.sort(key=lambda r:(rank.get(r['group'],999),-abs(r['move'] or 0)))
     material.sort(key=lambda r:-r['score'])
+
     broad_rows=[]
     for sym,(company,sector,bench) in BROAD_WATCHLIST.items():
         m=hist.get(sym); b=hist.get(bench)
@@ -1863,6 +2110,13 @@ def build_dashboard():
         breakeven={'value':be,'bp1d':bechg}
     except: breakeven={'error':'unavailable'}
     etf_lens=etf_lens_pack()
+    # Cross-asset valuation context: equity earnings yield versus the official 10Y Treasury.
+    y10_level=(curve.get('10Y') or {}).get('yield')
+    if y10_level is not None:
+        for lens in etf_lens.values():
+            if isinstance(lens,dict) and lens.get('type')=='equity' and lens.get('earnings_yield') is not None:
+                lens['yield_gap_bp']=round((lens['earnings_yield']-y10_level)*100,1)
+                lens['yield_gap_benchmark']='10Y U.S. Treasury'
     signals=tactical_signals(histories,regime,etf_lens)
     sectors=sectors_pack(histories,etf_lens)
     factors=factors_pack(histories,etf_lens)
@@ -1879,7 +2133,9 @@ def build_dashboard():
     payload={'market':market,'curve':curve,'fred':fred,'credit_proxy':credit_proxy,'acm':fp.get('acm',{}),'cvol':fp.get('cvol',{}),'fedwatch':fp.get('fedwatch',{}),'calendar':fp.get('calendar',[]),'auctions':fp.get('auctions',[]),
              'movers':movers,'core_tape':core_tape,'broad_movers':broad_movers,'sectors':sectors,'factors':factors,'signals':signals,'etf_lens':etf_lens,'regime':regime,'breakeven':breakeven}
     payload['takeaways']=top_takeaways(payload)
+    payload['morning_snapshot']=morning_snapshot(payload)
     payload['commentary']=build_commentary(payload)
+    payload['story_evidence']=story_evidence_layers(payload)
     quality=[]
     for key,row in market.items():
         if row.get('quality_issue'):
@@ -1892,7 +2148,9 @@ def build_dashboard():
         'updated':sgt_now().isoformat(timespec='seconds'),
         'mode':'scheduled static snapshot',
         'price_policy':'Returns are calculated from consecutive adjusted daily bars; chartPreviousClose is never used.',
-        'commentary_policy':'Rule-based commentary only; unsupported catalysts are omitted.'
+        'commentary_policy':'Rule-based commentary only; unsupported catalysts are omitted.',
+        'source_policy':'Official government / central-bank / issuer sources first. Public quote and consensus feeds are explicitly labeled and never substituted for official macro data.',
+        'history_policy':'Signal and primary-valuation history are stored once per underlying market session; no synthetic historical percentile is backfilled.'
     }
     return payload
 
