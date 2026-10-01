@@ -487,6 +487,52 @@ body{background:#F4F6F8;color:#292F40}
 .broadResearchTable th:nth-child(1){width:15%}.broadResearchTable th:nth-child(2){width:10%}.broadResearchTable th:nth-child(3){width:7%}.broadResearchTable th:nth-child(4){width:7%}.broadResearchTable th:nth-child(5){width:8%}.broadResearchTable th:nth-child(6){width:14%}.broadResearchTable th:nth-child(7){width:15%}.broadResearchTable th:nth-child(8){width:24%}
 .longHorizonTable{min-width:1390px!important}.allocationTable{min-width:1510px!important}
 
+
+/* Decision layer: compact, flat, M45 deck language */
+.morningWrap{display:grid;grid-template-columns:1fr;gap:0}
+.morningTiles{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #D6DCE5;border-bottom:0;background:#fff}
+.morningTile{padding:10px 12px;border-right:1px solid #E3E7EC;min-height:66px}
+.morningTile:last-child{border-right:0}
+.morningTile .mk{font-size:8.5px;font-weight:850;letter-spacing:.07em;color:#8A96A8}
+.morningTile .mv{margin-top:4px;font-size:12px;font-weight:800;color:#292F40;line-height:1.25}
+.morningTile .md{margin-top:3px;font-size:9.2px;color:#667487;line-height:1.3}
+.morningDecision{display:grid;grid-template-columns:1.35fr 1fr 1fr;border:1px solid #D6DCE5;background:#fff}
+.morningPane{padding:10px 12px;border-right:1px solid #E3E7EC;min-height:92px}
+.morningPane:last-child{border-right:0}
+.morningPane .pt{font-size:8.5px;font-weight:850;letter-spacing:.07em;color:#8A96A8;margin-bottom:6px}
+.changeLine{font-size:10.6px;line-height:1.42;color:#292F40;margin:3px 0}
+.whyLine{font-size:10.8px;line-height:1.5;color:#44546A}
+.nextLine{display:grid;grid-template-columns:62px 1fr;gap:6px;padding:3px 0;font-size:10.3px;line-height:1.35}
+.nextLine .tm{font-weight:800;color:#292F40}
+.nextLine a{color:#44546A;text-decoration:none}
+.nextLine a:hover{text-decoration:underline}
+.sourceStrip{padding:6px 10px;border:1px solid #D6DCE5;border-top:0;background:#F4F6F8;font-size:8.8px;color:#7C8795;display:flex;gap:10px;flex-wrap:wrap}
+.sourceStrip a{color:#44546A;text-decoration:none}
+.sourceStrip a:hover{text-decoration:underline}
+.coreFlags{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.researchFlag{display:inline-block;border:1px solid #D6DCE5;padding:1px 4px;font-size:7.5px;line-height:1.35;font-weight:850;letter-spacing:.035em;color:#44546A;background:#fff}
+.researchFlag.revision{color:#0E8C8B;border-color:#B8D9D8}
+.researchFlag.valuation{color:#8B6500;border-color:#E2D3A6}
+.researchFlag.relative{color:#1565C0;border-color:#B8CCE6}
+.scoreTop{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+.scoreDelta{font-size:8.7px;font-weight:750;color:#687687;white-space:nowrap}
+.signalSpark{display:block;width:92px;height:22px;margin-top:4px}
+.signalSpark path{fill:none;stroke:#44546A;stroke-width:1.5}
+.signalSpark line{stroke:#D6DCE5;stroke-width:1}
+.historyBuild{font-size:8px;color:#8A96A8;margin-top:4px}
+.attribNow{font-size:9.1px;color:#5F6C7B;line-height:1.35;margin-top:2px}
+.attribDelta{font-size:8.7px;color:#8A96A8;line-height:1.35;margin-top:2px}
+.storyEvidence{display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid #D6DCE5;margin:0 0 12px;background:#fff}
+.evidencePane{padding:10px 12px;border-right:1px solid #E3E7EC}
+.evidencePane:last-child{border-right:0}
+.evidenceTag{font-size:8px;font-weight:900;letter-spacing:.075em;color:#8A96A8;margin-bottom:5px}
+.evidencePane.fact .evidenceTag{color:#292F40}
+.evidencePane.interpretation .evidenceTag{color:#1565C0}
+.evidencePane.implication .evidenceTag{color:#7C8795}
+.evidenceText{font-size:10.5px;line-height:1.46;color:#364252}
+.evidenceSources{grid-column:1/-1;padding:6px 10px;background:#F4F6F8;border-top:1px solid #E3E7EC;font-size:8.6px;color:#7C8795}
+.evidenceSources a{color:#44546A;text-decoration:none}
+@media(max-width:900px){.morningTiles{grid-template-columns:1fr 1fr}.morningTile:nth-child(2){border-right:0}.morningTile:nth-child(-n+2){border-bottom:1px solid #E3E7EC}.morningDecision,.storyEvidence{grid-template-columns:1fr}.morningPane,.evidencePane{border-right:0;border-bottom:1px solid #E3E7EC}.evidencePane:last-of-type{border-bottom:0}}
 </style>
 </head>
 <body>
@@ -498,8 +544,8 @@ body{background:#F4F6F8;color:#292F40}
 
 <div class="page">
 <section class="section" id="overview">
-  <div class="regime" id="regime"><div class="loading">Loading dashboard…</div></div>
-  <div class="takeaways" id="takeaways"></div>
+  <div class="sh"><div class="st">TODAY · MORNING SNAPSHOT</div><div class="sn">Regime → what changed → why it matters → next catalyst</div></div>
+  <div class="body"><div id="morningSnapshot"><div class="loading">Loading decision snapshot…</div></div></div>
 </section>
 
 <section class="section">
@@ -539,22 +585,22 @@ body{background:#F4F6F8;color:#292F40}
 </div>
 
 <section class="section" id="moversSec">
-  <div class="sh"><div class="st">CORE EQUITY COVERAGE</div><div class="sn">Tabbed watchlist · open only the sleeve you need</div></div>
+  <div class="sh"><div class="st">CORE EQUITY COVERAGE</div><div class="sn">Price · relative · estimate · valuation change monitor</div></div>
   <div class="body">
     <div class="coreToolbar">
       <div class="coreTabs" id="coreTabs"></div>
       <div class="coreMeta" id="coreMeta"></div>
     </div>
     <div class="coreCoverageWrap" id="coreCoverage"></div>
-    <details class="selectionDetails"><summary>Methodology & selection logic</summary><div class="method">The default <b>Today</b> tab shows only names with a material move. The three sleeve tabs contain the full always-on watchlist without making the page vertically long.<br><br>A material flag is triggered by |1D| ≥ 1.5%, |1D vs benchmark| ≥ 1.0%, or |1W| ≥ 4.0%. Forward P/E is the default valuation where forecast EPS is meaningful; banks use P/B, REITs use P/B* as a screening proxy, and loss-making companies can fall back to EV/Sales. The valuation cell is the single detail trigger.</div></details>
+    <details class="selectionDetails"><summary>Methodology & selection logic</summary><div class="method">The default <b>Today</b> tab shows only names with a material move. The three sleeve tabs contain the full always-on watchlist without making the page vertically long.<br><br>A material flag is triggered by a price move (|1D| ≥ 1.5% or |1W| ≥ 4.0%), |1D vs benchmark| ≥ 1.0%, a ≥0.5pp change in the public 30D EPS-revision measure versus the prior snapshot, or a ≥2.5% move in the same primary valuation multiple. Revision data are explicitly treated as a public consensus feed, not an official company figure. Primary valuation history is stored once per market session from this dashboard forward; no synthetic historical percentile is backfilled.</div></details>
   </div>
 </section>
 <section class="section"><div class="sh"><div class="st">IMPORTANT LARGE-CAP MOVERS</div><div class="sn">Cross-sector scan beyond the core watchlist</div></div><div class="body"><div class="broadTableWrap" id="broadMovers"></div><details class="selectionDetails"><summary>Selection logic</summary><div class="method">Broad Mover Score = 65% × |1D| + 25% × |sector-relative 1D| + 10% × capped |1W|. A name enters only if |1D| ≥ 3.0% or |sector-relative 1D| ≥ 2.0%.</div></details></div></section>
 
 <div id="allocation">
 <section class="section">
-  <div class="sh"><div class="st">SYSTEMATIC TACTICAL ALLOCATION</div><div class="sn">Daily OW / Neutral / UW signal · tactical score with long-term context</div></div>
-  <div class="body"><div class="tableScroll"><table class="matrix compact allocationTable"><thead><tr><th>Asset class</th><th>View</th><th>Valuation / Carry</th><th>Score</th><th>1M</th><th>3M</th><th>6M</th><th>YTD</th><th>1Y</th><th>3Y</th><th>5Y</th><th>60D vol</th><th style="text-align:left">Main signal</th></tr></thead><tbody id="signals"></tbody></table></div><div class="details"><summary>Signal methodology</summary><div class="method">50% multi-horizon risk-adjusted trend (1M/3M/6M = 50/30/20), 25% relative strength versus a relevant benchmark, and 25% cross-asset regime alignment. Score ≥ +25 = Overweight; ≤ −25 = Underweight; otherwise Neutral.<br><br><b>Asset lens:</b> equity ETFs show portfolio P/E / earnings yield / dividend yield where available; fixed-income ETFs show issuer YTM / duration / SEC yield / OAS; real-asset ETFs are not given an earnings multiple.</div></div></div>
+  <div class="sh"><div class="st">SYSTEMATIC TACTICAL ALLOCATION</div><div class="sn">Signal level · prior-snapshot change attribution · stored daily history</div></div>
+  <div class="body"><div class="tableScroll"><table class="matrix compact allocationTable"><thead><tr><th>Asset class</th><th>View</th><th>Valuation / Carry</th><th>Score / Δ / History</th><th>1M</th><th>3M</th><th>6M</th><th>YTD</th><th>1Y</th><th>3Y</th><th>5Y</th><th>60D vol</th><th style="text-align:left">Main signal</th></tr></thead><tbody id="signals"></tbody></table></div><div class="details"><summary>Signal methodology</summary><div class="method">50% multi-horizon risk-adjusted trend (1M/3M/6M = 50/30/20), 25% relative strength versus a relevant benchmark, and 25% cross-asset regime alignment. Score ≥ +25 = Overweight; ≤ −25 = Underweight; otherwise Neutral.<br><br><b>Asset lens:</b> equity ETFs show portfolio P/E / earnings yield / dividend yield where available; fixed-income ETFs show issuer YTM / duration / SEC yield / OAS; real-asset ETFs are not given an earnings multiple.</div></div></div>
 </section>
 </div>
 
@@ -570,6 +616,7 @@ body{background:#F4F6F8;color:#292F40}
   </div>
   <div class="storylineWrap">
     <div class="storySummaryBox"><div class="lbl">90-second story</div><div class="txt" id="meetingSummary"></div></div>
+    <div class="storyEvidence" id="storyEvidence"></div>
     <div class="flowNode mixed" id="storyStart"></div>
     <div class="flowArrow">↓</div>
     <div class="flowNode mixed" id="storyTransmission"></div>
@@ -691,7 +738,9 @@ function stockDetailHTML(sym){
   ['EV / Sales',fmtMultiple(v.enterprise_to_revenue)],
   ['P / Sales',fmtMultiple(v.price_to_sales)],
   ['P / Book',fmtMultiple(v.price_to_book)],
-  ['PEG',v.peg_ratio!==null&&v.peg_ratio!==undefined?n(v.peg_ratio,2)+'×':'n.a.']
+  ['PEG',v.peg_ratio!==null&&v.peg_ratio!==undefined?n(v.peg_ratio,2)+'×':'n.a.'],
+  ['Stored median',v.history_n>=2?fmtMultiple(v.history_median):(v.history_n?('building · '+v.history_n+' daily obs'):'building')],
+  ['Stored percentile',v.history_percentile!==null&&v.history_percentile!==undefined?n(v.history_percentile,0)+'th':(v.history_n?('needs 20 sessions · '+v.history_n+' stored'):'needs 20 sessions')]
  ];
  const quality=[
   ['Revenue growth',fmtPct1(v.revenue_growth),v.revenue_growth],
@@ -714,6 +763,8 @@ function stockDetailHTML(sym){
   ['3Y',stockHorizon(row,'3y'),row?.['3y']],
   ['5Y',stockHorizon(row,'5y'),row?.['5y']],
   ['Relative · 1D',pct(row?.relative),row?.relative],
+  ['EPS revision Δ · prior snapshot',fmtPct1(row?.revision_change),row?.revision_change],
+  ['Valuation Δ · prior snapshot',fmtPct1(row?.valuation_change_pct),row?.valuation_change_pct],
   ['Consensus target upside',fmtPct1(v.target_upside),v.target_upside],
   ['Dividend yield',v.dividend_yield!==null&&v.dividend_yield!==undefined?n(v.dividend_yield,2)+'%':'Not available']
  ];
@@ -736,6 +787,7 @@ function etfDetailHTML(sym){
  }else if(l.type==='equity'){
    body=detailRow(l.pe_label||'P/E',l.pe!==null&&l.pe!==undefined?n(l.pe,1)+'×':'n.a.')+
         detailRow('Earnings yield',l.earnings_yield!==null&&l.earnings_yield!==undefined?n(l.earnings_yield,1)+'%':'n.a.')+
+        detailRow('Earnings yield − 10Y Treasury',l.yield_gap_bp!==null&&l.yield_gap_bp!==undefined?bp(l.yield_gap_bp):'n.a.')+
         detailRow('Dividend yield',l.yield!==null&&l.yield!==undefined?n(l.yield,2)+'%':'n.a.');
  }else{
    body=detailRow('Primary lens','Trend / volatility / macro regime')+
@@ -794,6 +846,15 @@ window.addEventListener('resize',()=>{if(currentInfoTarget&&getPopover().classLi
 
 function priceFmt(key,x){if(x===null||x===undefined)return'n.a.'; if(['brent','wti','gold','btc'].includes(key))return '$'+n(x,x>=1000?0:2); if(['eurusd','usdcnh'].includes(key))return n(x,4); if(key==='usdjpy'||key==='dxy'||key==='vix')return n(x,2); return n(x,x>=1000?0:2)}
 function scoreGauge(v){let pos=Math.max(0,Math.min(100,(v+100)/2));return `<div class="scorebar"><i style="left:${pos}%"></i></div>`}
+
+function renderMorning(d){
+ const s=d.morning_snapshot||{}, tiles=s.tiles||[], changes=s.what_changed||[], next=s.next||[], sources=s.sources||[];
+ const tilesHtml=tiles.map(x=>'<div class="morningTile"><div class="mk">'+esc(x.label||'')+'</div><div class="mv">'+esc(x.value||'n.a.')+'</div><div class="md">'+esc(x.detail||'')+'</div></div>').join('');
+ const ch=changes.length?changes.map(x=>'<div class="changeLine">'+esc(x)+'</div>').join(''):'<div class="changeLine">No material cross-asset change identified.</div>';
+ const nx=next.length?next.map(x=>'<div class="nextLine"><div class="tm">'+esc(x.time||'')+'</div><div>'+(x.url?'<a target="_blank" rel="noopener noreferrer" href="'+esc(x.url)+'">'+esc((x.date?x.date+' · ':'')+(x.title||''))+' ↗</a>':esc((x.date?x.date+' · ':'')+(x.title||'')))+(x.source?'<div class="sub">'+esc(x.source)+'</div>':'')+'</div></div>').join(''):'<div class="changeLine">No major scheduled catalyst in the current window.</div>';
+ const src=sources.map(x=>x.url?'<a target="_blank" rel="noopener noreferrer" href="'+esc(x.url)+'">'+esc(x.name||'Source')+(x.asof?' · '+esc(x.asof):'')+' ↗</a>':esc(x.name||'Source')).join('<span>·</span>');
+ document.getElementById('morningSnapshot').innerHTML='<div class="morningWrap"><div class="morningTiles">'+tilesHtml+'</div><div class="morningDecision"><div class="morningPane"><div class="pt">WHAT CHANGED</div>'+ch+'</div><div class="morningPane"><div class="pt">WHY IT MATTERS</div><div class="whyLine">'+esc(s.why||'')+'</div></div><div class="morningPane"><div class="pt">NEXT CATALYST</div>'+nx+'</div></div><div class="sourceStrip"><span>Source / freshness</span>'+src+'</div></div>';
+}
 
 function renderRegime(d){
  const r=d.regime||{}, risk=Math.round((r.risk||0)*100), growth=Math.round((r.growth||0)*100), inf=Math.round((r.inflation||0)*100);
@@ -929,8 +990,9 @@ function coreGroupShort(group){
 function coreRow(r,showGroup){
  const catalyst=r.explanation?'<tr class="catalystRow"><td colspan="6"><span>Catalyst</span> '+(r.link?'<a target="_blank" rel="noopener noreferrer" href="'+esc(r.link)+'">'+esc(r.explanation)+'</a>':esc(r.explanation))+'</td></tr>':'';
  const sub=esc(r.company)+(showGroup?' · <span class="coreSleeve">'+esc(coreGroupShort(r.group))+'</span>':'');
+ const flags=(r.flags||[]).map(f=>'<span class="researchFlag '+String(f).toLowerCase()+'">'+esc(f)+'</span>').join('');
  const main='<tr>'+
-   '<td class="coreName"><div class="nm">'+(r.material?'<span class="materialDot"></span>':'')+qlink(r.symbol,r.display,'symbolLink')+'</div><div class="sub">'+sub+'</div></td>'+
+   '<td class="coreName"><div class="nm">'+(r.material?'<span class="materialDot"></span>':'')+qlink(r.symbol,r.display,'symbolLink')+'</div><div class="sub">'+sub+'</div>'+(flags?'<div class="coreFlags">'+flags+'</div>':'')+'</td>'+
    '<td class="num '+cls(r.move)+' '+heatH(r.move,'1d')+'"><b>'+pct(r.move)+'</b></td>'+
    '<td class="num '+cls(r["1w"])+' '+heatH(r["1w"],"1w")+'">'+pct(r["1w"])+'</td>'+
    '<td class="num '+cls(r.relative)+' '+heatH(r.relative,'relative')+'">'+pct(r.relative)+'</td>'+
@@ -992,14 +1054,29 @@ function renderMovers(d){
  renderCoreCoverage(d.core_tape||[]);
  document.getElementById('broadMovers').innerHTML=renderBroadTable(d.broad_movers||[]);
 }
+function scoreSpark(history){
+ const h=(history||[]).filter(x=>x&&x.score!==null&&x.score!==undefined);
+ if(h.length<2)return '<div class="historyBuild">history building · '+h.length+' session'+(h.length===1?'':'s')+'</div>';
+ const vals=h.map(x=>Number(x.score)), mn=Math.min(-30,...vals), mx=Math.max(30,...vals), w=92,hgt=22,pad=2;
+ const X=i=>pad+(w-pad*2)*(i/(vals.length-1)), Y=v=>hgt-pad-(hgt-pad*2)*((v-mn)/(mx-mn||1));
+ const d=vals.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+ const zero=Y(0).toFixed(1);
+ return '<svg class="signalSpark" viewBox="0 0 '+w+' '+hgt+'" preserveAspectRatio="none" aria-label="Stored signal history"><line x1="0" y1="'+zero+'" x2="'+w+'" y2="'+zero+'"></line><path d="'+d+'"></path></svg>';
+}
+function signedSmall(v,suffix=''){
+ if(v===null||v===undefined||Number.isNaN(Number(v)))return 'n.a.';
+ return (Number(v)>=0?'+':'')+n(v,1)+suffix;
+}
 function renderSignals(d){
  let x=d.signals||[];
  document.getElementById('signals').innerHTML=x.map(function(r){
+  const delta=r.score_change;
+  const attrDelta=(r.delta_trend!==null&&r.delta_trend!==undefined)?'Δ Trend '+signedSmall(r.delta_trend)+' · Rel '+signedSmall(r.delta_relative)+' · Macro '+signedSmall(r.delta_macro):'Δ attribution building';
   return '<tr><td><div class="ticker">'+qlink(r.symbol,r.name,'symbolLink')+'</div><div class="sub">'+qlink(r.symbol,r.symbol,'symbolLink')+' · '+r.class+'</div></td>'+
   '<td><span class="pill '+(r.view==='OVERWEIGHT'?'ow':r.view==='UNDERWEIGHT'?'uw':'nt')+'">'+r.view+'</span></td>'+
-  '<td>'+etfLensHTML(r.lens,r.symbol)+'</td><td class="barcell"><div style="display:flex;justify-content:space-between;gap:6px"><b class="'+cls(r.score)+'">'+(r.score>=0?'+':'')+n(r.score,0)+'</b></div>'+scoreGauge(r.score)+'</td>'+
+  '<td>'+etfLensHTML(r.lens,r.symbol)+'</td><td class="barcell"><div class="scoreTop"><b class="'+cls(r.score)+'">'+(r.score>=0?'+':'')+n(r.score,0)+'</b><span class="scoreDelta">Δ '+signedSmall(delta)+'</span></div>'+scoreGauge(r.score)+scoreSpark(r.score_history)+'</td>'+
   returnCell(r['1m'],'1m')+returnCell(r['3m'],'3m')+returnCell(r['6m'],'6m')+returnCell(r['ytd'],'ytd')+returnCell(r['1y'],'1y')+returnCell(r['3y'],'3y')+returnCell(r['5y'],'5y')+
-  '<td>'+(r.vol!==null?n(r.vol,1)+'%':'Not available')+'</td><td class="driver">'+esc(r.driver)+'<div class="sub">Trend '+(r.trend>=0?'+':'')+n(r.trend,0)+' · Relative '+(r.relative>=0?'+':'')+n(r.relative,0)+' · Macro '+(r.macro>=0?'+':'')+n(r.macro,0)+'</div></td></tr>';
+  '<td>'+(r.vol!==null?n(r.vol,1)+'%':'Not available')+'</td><td class="driver">'+esc(r.driver)+'<div class="attribNow">Trend '+signedSmall(r.contrib_trend)+' · Relative '+signedSmall(r.contrib_relative)+' · Macro '+signedSmall(r.contrib_macro)+'</div><div class="attribDelta">'+esc(attrDelta)+' · prior published snapshot</div></td></tr>';
  }).join('');
 }
 function storyNode(x){
@@ -1011,6 +1088,8 @@ function renderCommentary(d){
  document.getElementById('commentaryHeadline').textContent=cm.headline||'Daily market storyline';
  document.getElementById('commentaryDek').textContent=cm.dek||'';
  document.getElementById('meetingSummary').textContent=s.summary||cm.meeting_summary||'';
+ const ev=d.story_evidence||{}, evs=ev.sources||[];
+ document.getElementById('storyEvidence').innerHTML='<div class="evidencePane fact"><div class="evidenceTag">FACT</div><div class="evidenceText">'+esc(ev.fact||'Observed facts n.a.')+'</div></div><div class="evidencePane interpretation"><div class="evidenceTag">INTERPRETATION</div><div class="evidenceText">'+esc(ev.interpretation||'Interpretation n.a.')+'</div></div><div class="evidencePane implication"><div class="evidenceTag">IMPLICATION</div><div class="evidenceText">'+esc(ev.implication||'Implication n.a.')+'</div></div><div class="evidenceSources">Sources · '+evs.map(x=>x.url?'<a target="_blank" rel="noopener noreferrer" href="'+esc(x.url)+'">'+esc(x.name||'Source')+(x.asof?' · '+esc(x.asof):'')+' ↗</a>':esc(x.name||'Source')).join(' · ')+'</div>';
  const st=document.getElementById('storyStart'); st.className='flowNode '+(s.start?.tone||'mixed'); st.innerHTML=storyNode(s.start);
  const tr=document.getElementById('storyTransmission'); tr.className='flowNode '+(s.transmission?.tone||'mixed'); tr.innerHTML=storyNode(s.transmission);
  document.getElementById('storyBranches').innerHTML=(s.branches||[]).map(function(x){return '<div class="branchCard '+(x.tone||'mixed')+'"><div class="branchTag">'+esc(x.tag||'BRANCH')+'</div><div class="branchTitle">'+esc(x.title||'')+'</div><div class="branchBody">'+esc(x.body||'')+'</div></div>';}).join('');
@@ -1043,7 +1122,7 @@ function renderCalendar(d){
  }).join('');
  document.getElementById('cal').innerHTML=cards+'<div class="calFoot">Only market-moving U.S. macro releases are shown. “Not formed” means no public survey consensus is available yet; a model forecast, when available, is shown separately and never relabeled as consensus.</div>';
 }
-async function loadData(force=false){document.getElementById('stamp').textContent='Loading latest snapshot…';try{const url='data/dashboard.json'+(force?'?v='+Date.now():'');let r=await fetch(url,{cache:force?'no-store':'default'});if(!r.ok)throw new Error('dashboard.json '+r.status);let d=await r.json();window.DATA=d;renderRegime(d);renderTakeaways(d);assetRows(d);renderRates(d);renderSimple(d);renderInternals(d);renderSectors(d);renderFactors(d);renderMovers(d);renderSignals(d);renderCalendar(d);renderCommentary(d);let t=new Date(d.meta.updated);document.getElementById('stamp').textContent='Snapshot '+t.toLocaleString('en-SG',{timeZone:'Asia/Singapore',hour12:false})+' SGT'}catch(e){document.getElementById('stamp').textContent='Snapshot unavailable';console.error(e)}}
+async function loadData(force=false){document.getElementById('stamp').textContent='Loading latest snapshot…';try{const url='data/dashboard.json'+(force?'?v='+Date.now():'');let r=await fetch(url,{cache:force?'no-store':'default'});if(!r.ok)throw new Error('dashboard.json '+r.status);let d=await r.json();window.DATA=d;renderMorning(d);assetRows(d);renderRates(d);renderSimple(d);renderInternals(d);renderSectors(d);renderFactors(d);renderMovers(d);renderSignals(d);renderCalendar(d);renderCommentary(d);let t=new Date(d.meta.updated);document.getElementById('stamp').textContent='Snapshot '+t.toLocaleString('en-SG',{timeZone:'Asia/Singapore',hour12:false})+' SGT'}catch(e){document.getElementById('stamp').textContent='Snapshot unavailable';console.error(e)}}
 loadData(false);setInterval(()=>loadData(false),900000);
 </script>
 </body>
