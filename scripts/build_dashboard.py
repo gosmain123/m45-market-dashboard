@@ -809,11 +809,42 @@ def major_calendar():
             except: pass
 
     fallback=_official_calendar_fallback()
+
+    # Official schedule is canonical for date/time whenever a BLS/BEA/Fed (or
+    # rule-based ISM) release can be matched. The public market calendar is used
+    # only for survey consensus / actual fields that official schedules do not provide.
+    official_by_title={}
+    for e in fallback:
+        official_by_title.setdefault(e.get('title'),[]).append(e)
+    for e in out:
+        matches=official_by_title.get(e.get('title'),[])
+        try:
+            ed=date.fromisoformat(e.get('iso_date'))
+        except Exception:
+            ed=None
+        best=None; bestgap=999
+        for o in matches:
+            try:
+                od=date.fromisoformat(o.get('iso_date')); gap=abs((od-ed).days) if ed else 999
+            except Exception:
+                gap=999
+            if gap<bestgap:
+                best=o; bestgap=gap
+        if best is not None and bestgap<=1:
+            for k in ('iso_date','date','time','source','detail_url','status','importance'):
+                if best.get(k) is not None:
+                    e[k]=best.get(k)
+            e['schedule_source']='official release calendar'
+        else:
+            e['schedule_source']='public market calendar'
+        e['consensus_source']='Trading Economics public calendar' if e.get('metrics') else None
+
     existing={(e.get('iso_date'),e.get('title')) for e in out}
     for e in fallback:
         k=(e.get('iso_date'),e.get('title'))
         if k not in existing:
-            out.append(e); existing.add(k)
+            z=dict(e); z['schedule_source']='official release calendar'; z['consensus_source']=None
+            out.append(z); existing.add(k)
 
     # Keep recent releases plus enough future horizon to always include CPI/PPI/PCE/jobs/retail/FOMC.
     out=sorted(out,key=lambda e:(e.get('iso_date',''),e.get('time',''),0 if e.get('status')=='RELEASED' else 1,e.get('title','')))
