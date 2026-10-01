@@ -649,7 +649,7 @@ function etfLensHTML(l,sym){
   const sub=(l.earnings_yield!==null&&l.earnings_yield!==undefined?'E/P '+n(l.earnings_yield,1)+'%':'')+(l.yield!==null&&l.yield!==undefined?' · Div '+n(l.yield,1)+'%':'');
   return '<div'+infoAttrs('etf',sym)+'><div class="etfmain">'+main+' <span class="infoGlyph">i</span></div><div class="etfsub">'+sub+'</div></div>';
  }
- return '<div'+infoAttrs('etf',sym)+'><div class="etfmain">N/A <span class="infoGlyph">i</span></div><div class="etfsub">trend / vol</div></div>';
+ return '<div'+infoAttrs('etf',sym)+'><div class="etfmain">Trend / Vol <span class="infoGlyph">i</span></div><div class="etfsub">no earnings multiple</div></div>';
 }
 
 function valueTone(v,mode='directional'){
@@ -844,11 +844,11 @@ function renderRates(d){
  ['2Y',c['2Y']?.yield,c['2Y']?.bp1d,c['2Y']?.bp1m],['5Y',c['5Y']?.yield,c['5Y']?.bp1d,c['5Y']?.bp1m],['10Y',c['10Y']?.yield,c['10Y']?.bp1d,c['10Y']?.bp1m],['30Y',c['30Y']?.yield,c['30Y']?.bp1d,c['30Y']?.bp1m],
  ['2s10s',c['2s10s']?.value,c['2s10s']?.bp1d,c['2s10s']?.bp1m,'bp'],['10Y Real',f.real10?.value,(f.real10?.['1d']??null)*100,(f.real10?.['1m']??null)*100],['10Y BE',be.value,be.bp1d,null]
  ];
- document.getElementById('rateMetrics').innerHTML=mm.map(([k,v,d1,m1,u])=>`<div class="metric"><div class="mk">${k}</div><div class="mv">${v===undefined||v===null?'—':n(v,2)}${u||'%'}</div><div class="mc ${cls(d1)}">1D ${bp(d1)}${m1!==null&&m1!==undefined?` · 1M ${bp(m1)}`:''}</div></div>`).join('');
+ document.getElementById('rateMetrics').innerHTML=mm.map(([k,v,d1,m1,u])=>`<div class="metric"><div class="mk">${k}</div><div class="mv">${v===undefined||v===null?'n.a.':n(v,2)}${v===undefined||v===null?'':(u||'%')}</div><div class="mc ${cls(d1)}">1D ${bp(d1)}${m1!==null&&m1!==undefined?` · 1M ${bp(m1)}`:''}</div></div>`).join('');
  drawCurve(c); document.getElementById('rateInterp').innerHTML=`<strong>${curveName(c)}.</strong> ${esc(rateExplain(c,f,a))}`;
  const fw=d.fedwatch||{}, probs=Object.entries(fw.probabilities||{}).sort((a,b)=>b[1]-a[1]), fwv=probs[0]?`${probs[0][0]} · ${n(probs[0][1],1)}%`:'Unavailable';
  const cv=d.cvol||{};
- document.getElementById('ratesDrivers').innerHTML=`${box('FedWatch · most likely target',fwv,fw.date||'Next FOMC')}${box('10Y ACM term premium',a.tp10!==undefined?n(a.tp10,2)+'%':'—',a.bp1d!==undefined?`${bp(a.bp1d)} 1D · ${bp(a.bp1m)} 1M · as of ${a.date||'—'}`:'')}${box('Treasury CVOL',cv.value!==undefined?n(cv.value,1):'—',cv.value!==undefined?`${cv.change!==undefined?(cv.change>=0?'+':'')+n(cv.change,1)+' Δ · ':''}as of ${cv.date||'latest'}${cv.stale?' · cached':''}`:'')}${box('Next long auction',auctionText(d.auctions||[]),'10Y / 20Y / 30Y supply')}`;
+ document.getElementById('ratesDrivers').innerHTML=`${box('FedWatch · most likely target',fwv,fw.date||'Next FOMC')}${box('10Y ACM term premium',a.tp10!==undefined?n(a.tp10,2)+'%':'n.a.',a.bp1d!==undefined?`${bp(a.bp1d)} 1D · ${bp(a.bp1m)} 1M · as of ${a.date||'date n.a.'}`:'Latest model value unavailable')}${box('Treasury CVOL',cv.value!==undefined?n(cv.value,1):'n.a.',cv.value!==undefined?`${cv.change!==undefined?(cv.change>=0?'+':'')+n(cv.change,1)+' Δ · ':''}as of ${cv.date||'latest'}${cv.stale?' · cached':''}`:'Latest public value unavailable')}${box('Next long auction',auctionText(d.auctions||[]),'10Y / 20Y / 30Y supply')}`;
  document.getElementById('ratesMethod').innerHTML=`<b>2Y</b> is the cleanest daily read on Fed-path repricing. <b>10Y/30Y</b> isolate longer-duration pressure. <b>10Y real + breakeven</b> split the nominal move into real-rate and inflation compensation. <b>ACM term premium</b> is a daily model estimate; use the change, not just the level. <b>CVOL</b> tells you how much rate volatility is priced, not direction. 10Y real yield is sourced from the U.S. Treasury real curve and carries its own as-of date.`;
 }
 function box(k,v,s){return `<div class="box"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`}
