@@ -90,7 +90,7 @@ jobs:
           if val_count < max(20, int(len(core)*0.70)):
               raise SystemExit(f'Valuation coverage too low: {val_count}/{len(core)} core names')
 
-          horizon_fields=('1d','1w','1m','3m','6m','1y','3y','5y')
+          horizon_fields=('1d','1w','1m','3m','6m','ytd','1y','3y','5y')
           long_missing=[]
           for key,row in d.get('market',{}).items():
               for field in horizon_fields:
@@ -102,7 +102,7 @@ jobs:
                       if row.get(field) is None:
                           long_missing.append(f'{bucket}.{row.get("symbol")}.{field}')
           for row in d.get('signals',[]):
-              for field in ('1m','3m','6m','1y','3y','5y'):
+              for field in ('1m','3m','6m','ytd','1y','3y','5y'):
                   if row.get(field) is None:
                       long_missing.append(f'signals.{row.get("symbol")}.{field}')
           if long_missing:
