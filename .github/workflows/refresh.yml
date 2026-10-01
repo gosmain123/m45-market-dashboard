@@ -108,7 +108,20 @@ jobs:
           if long_missing:
               raise SystemExit('Long-horizon dashboard gaps: '+', '.join(long_missing[:30]))
 
-          print(f'Critical dashboard QA passed; valuation coverage {val_count}/{len(core)}; long-horizon tables complete')
+          morning=d.get('morning_snapshot') or {}
+          if len(morning.get('tiles') or []) != 4 or not (morning.get('what_changed') or []) or not (morning.get('next') or []):
+              raise SystemExit('Morning Snapshot QA failed')
+          story=d.get('story_evidence') or {}
+          if not all(story.get(k) for k in ('fact','interpretation','implication')):
+              raise SystemExit('Story evidence-layer QA failed')
+          bad_signals=[r.get('symbol') for r in d.get('signals',[]) if 'score_change' not in r or 'score_history' not in r or 'contrib_trend' not in r]
+          if bad_signals:
+              raise SystemExit('Signal attribution/history QA failed: '+', '.join(bad_signals))
+          bad_core=[r.get('symbol') for r in core if not isinstance(r.get('flags'),list) or 'valuation_history' not in r]
+          if bad_core:
+              raise SystemExit('Core research-flag/history QA failed: '+', '.join(bad_core))
+
+          print(f'Critical dashboard QA passed; valuation coverage {val_count}/{len(core)}; decision layer + long-horizon tables complete')
           PY
 
       - name: Commit refreshed snapshot
