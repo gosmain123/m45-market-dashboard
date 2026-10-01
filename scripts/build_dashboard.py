@@ -695,7 +695,8 @@ def _official_calendar_fallback():
     rows=[]; now=datetime.now(NY_TZ)
     # BLS calendar
     try:
-        for e in parse_ics(req('https://www.bls.gov/schedule/news_release/bls.ics',timeout=12).text):
+        bls_headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153 Safari/537.36','Accept-Language':'en-US,en;q=0.9'}
+        for e in parse_ics(req('https://www.bls.gov/schedule/news_release/bls.ics',timeout=12,headers=bls_headers).text):
             summary=e.get('SUMMARY',''); lo=summary.lower(); group=None
             if 'employment situation' in lo: group='Jobs Report'
             elif 'consumer price index' in lo: group='CPI Inflation'
@@ -713,7 +714,8 @@ def _official_calendar_fallback():
     # BLS HTML schedule fallback. This is still an official BLS source and is
     # useful when the ICS endpoint is blocked by a CI runner.
     try:
-        bls_html=req(f'https://www.bls.gov/schedule/{now.year}/home.htm',timeout=12).text
+        bls_headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153 Safari/537.36','Accept-Language':'en-US,en;q=0.9'}
+        bls_html=req(f'https://www.bls.gov/schedule/{now.year}/home.htm',timeout=12,headers=bls_headers).text
         for df in pd.read_html(StringIO(bls_html)):
             for _,row in df.astype(str).iterrows():
                 txt=' | '.join(row.tolist()); lo=txt.lower(); group=None
