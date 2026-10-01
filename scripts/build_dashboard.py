@@ -735,9 +735,34 @@ def _official_calendar_fallback():
     except Exception:
         pass
 
+    # Direct official BLS schedule pages are the final fallback. Their layout is
+    # simple enough to parse without relying on the aggregate calendar/ICS endpoints.
+    try:
+        bls_headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153 Safari/537.36','Accept-Language':'en-US,en;q=0.9'}
+        bls_pages={
+            'Jobs Report':'https://www.bls.gov/schedule/news_release/empsit.htm',
+            'CPI Inflation':'https://www.bls.gov/schedule/news_release/cpi.htm',
+            'PPI Inflation':'https://www.bls.gov/schedule/news_release/ppi.htm',
+            'JOLTS':'https://www.bls.gov/schedule/news_release/jolts.htm'
+        }
+        for group,url in bls_pages.items():
+            txt=BeautifulSoup(req(url,timeout=12,headers=bls_headers).text,'html.parser').get_text(' ',strip=True)
+            for mm in re.finditer(r'\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\.?\s+(\d{1,2}),\s+(20\d{2})\s+(\d{1,2}:\d{2})\s*(AM|PM)\b',txt,re.I):
+                mon=mm.group(1)
+                if mon.lower()=='sept': mon='Sep'
+                try:
+                    dt=datetime.strptime(f'{mon} {mm.group(2)} {mm.group(3)} {mm.group(4)} {mm.group(5)}','%b %d %Y %I:%M %p').replace(tzinfo=NY_TZ)
+                except Exception:
+                    continue
+                if dt>=now-timedelta(days=2):
+                    rows.append((dt.astimezone(SGT),group))
+    except Exception:
+        pass
+
     # BEA release schedule
     try:
-        for df in pd.read_html(StringIO(req('https://www.bea.gov/news/schedule/',timeout=12).text)):
+        bea_headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153 Safari/537.36','Accept-Language':'en-US,en;q=0.9'}
+        for df in pd.read_html(StringIO(req('https://www.bea.gov/news/schedule/',timeout=12,headers=bea_headers).text)):
             for _,row in df.astype(str).iterrows():
                 txt=' | '.join(row.tolist()); lo=txt.lower(); group=None
                 if 'personal income and outlays' in lo: group='PCE Inflation'
