@@ -429,6 +429,64 @@ body{font-family:Inter,"Segoe UI",Arial,sans-serif;background:#F2F3F6;color:#292
 .curvelegend .m:before{background:#D6DCE5!important}
 .gauge{background:#E6EAEF!important;border-radius:0!important}
 .gauge>span{background:#44546A!important}
+
+/* M45 deck-aligned final visual pass */
+:root{
+ --ink:#292F40;--muted:#8A96A8;--muted2:#A4A3A4;
+ --line:#D6DCE5;--line2:#E6EAEF;--paper:#FFFFFF;--bg:#F4F6F8;
+ --navy:#292F40;--navy2:#44546A;--blue:#1565C0;--teal:#0E8C8B;
+ --green:#2E7D32;--red:#C62828;--amber:#C88A00;--soft:#F4F6F8;
+}
+body{background:#F4F6F8;color:#292F40}
+.top{background:#44546A;border-bottom:0;box-shadow:none}
+.brand b{color:#FFFFFF}.brand span,.nav a,.stamp{color:#ECF1F8}
+.nav a{border-radius:0}.nav a:hover{background:#292F40;color:#FFFFFF}
+.right button{background:transparent;border-color:#8A96A8;color:#FFFFFF;border-radius:0}.right button:hover{background:#292F40}
+.section{border:1px solid #D6DCE5;border-radius:0;background:#FFFFFF;box-shadow:none}
+.sh{min-height:40px;background:#FFFFFF;border-bottom:2px solid #292F40;padding:8px 12px}
+.sh:before{display:none!important}
+.st{font-size:11.5px;color:#292F40;letter-spacing:.035em}.sn{font-size:10px;color:#8A96A8}
+.body{padding:11px 12px}
+.matrix th,.researchTable thead th{
+ background:#292F40!important;color:#FFFFFF!important;border-bottom:1px solid #292F40!important;
+ font-size:10px!important;font-weight:750!important;letter-spacing:.04em!important;padding:7px 8px!important
+}
+.matrix td,.researchTable td{font-size:11px;border-bottom:1px solid #E6EAEF;padding:7px 8px}
+.matrix tbody tr:nth-child(even) td,.researchTable tbody tr:nth-child(even) td{background:#F4F6F8}
+.matrix tbody tr:hover td,.researchTable tbody tr:not(.catalystRow):hover td{background:#EEF1F4}
+.group,.researchGroup td{background:#44546A!important;color:#FFFFFF!important;border-color:#44546A!important}
+.group{font-size:9px!important;letter-spacing:.055em}
+.assetLink,.symbolLink,.calTitle,.detailLink,.catalystCell a,.catalystRow a{color:#1565C0}
+.pos,.vpos{color:#2E7D32!important}.neg,.vneg{color:#C62828!important}.neu{color:#8A96A8!important}
+.heatp1{background:#F1F6F2!important;color:#2E7D32!important}
+.heatp2{background:#E1EDE3!important;color:#2E7D32!important;font-weight:700}
+.heatp3{background:#CFE1D2!important;color:#245F28!important;font-weight:800}
+.heatn1{background:#FBF3F3!important;color:#C62828!important}
+.heatn2{background:#F4E3E3!important;color:#C62828!important;font-weight:700}
+.heatn3{background:#EBCFCF!important;color:#9F2020!important;font-weight:800}
+.coreTab{border-radius:0;background:#FFFFFF;border-color:#D6DCE5;color:#44546A}
+.coreTab:hover{background:#F4F6F8;color:#292F40}
+.coreTab.active{background:#292F40;border-color:#292F40;color:#FFFFFF;box-shadow:none}
+.coreTab span{border-radius:0}
+.materialDot{background:#C88A00}
+.pill{border-radius:0}.pill.ow{background:#EEF5EF;color:#2E7D32;border:1px solid #D5E5D7}.pill.uw{background:#FAEEEE;color:#C62828;border:1px solid #F0D3D3}.pill.nt{background:#F4F6F8;color:#44546A;border:1px solid #D6DCE5}
+.pill.high{background:#FBF3E3;color:#8B6500;border:1px solid #E8D29B}
+.catalystRow td{background:#FFF9EE!important}.catalystRow span{color:#8B6500}
+.storyHead,.storySummaryBox,.endNode{background:#F4F6F8}
+.storySummaryBox{border-left-color:#C88A00}
+.flowNode.supportive{border-left-color:#0E8C8B}.flowNode.warning{border-left-color:#C88A00}.flowNode.mixed{border-left-color:#8A96A8}
+.branchCard.supportive{border-top-color:#0E8C8B}.branchCard.warning{border-top-color:#C88A00}.branchCard.mixed{border-top-color:#8A96A8}
+.internalCard.posi{border-top-color:#2E7D32}.internalCard.negi{border-top-color:#C62828}.internalCard.neui{border-top-color:#8A96A8}
+.detailSectionTitle{background:#292F40;color:#FFFFFF;border-bottom-color:#292F40}
+.detailNote{background:#F4F6F8;border-left-color:#C88A00}
+.detailPopover{border:1px solid #D6DCE5;border-radius:0;box-shadow:0 12px 30px rgba(41,47,64,.16)}
+.calCard,.flowNode,.branchCard,.storyAfterPane,.storySummaryBox,.box,.internalCard{border-radius:0}
+.calTop{background:#F4F6F8}
+.scorebar{background:#E6EAEF!important;border-radius:0!important}.scorebar i{background:#44546A}
+.broadResearchTable{min-width:1220px}
+.broadResearchTable th:nth-child(1){width:15%}.broadResearchTable th:nth-child(2){width:10%}.broadResearchTable th:nth-child(3){width:7%}.broadResearchTable th:nth-child(4){width:7%}.broadResearchTable th:nth-child(5){width:8%}.broadResearchTable th:nth-child(6){width:14%}.broadResearchTable th:nth-child(7){width:15%}.broadResearchTable th:nth-child(8){width:24%}
+.longHorizonTable{min-width:1390px!important}.allocationTable{min-width:1510px!important}
+
 </style>
 </head>
 <body>
@@ -445,7 +503,7 @@ body{font-family:Inter,"Segoe UI",Arial,sans-serif;background:#F2F3F6;color:#292
 </section>
 
 <section class="section">
-  <div class="sh"><div class="st">CROSS-ASSET MONITOR</div><div class="sn">Level · 1D · 1W · 1M · YTD</div></div>
+  <div class="sh"><div class="st">CROSS-ASSET MONITOR</div><div class="sn">Level · valuation / carry · return heatmap through 5Y</div></div>
   <div class="body" id="crossAsset"></div>
 </section>
 
@@ -471,11 +529,11 @@ body{font-family:Inter,"Segoe UI",Arial,sans-serif;background:#F2F3F6;color:#292
 
 <div class="equityStack" id="equities">
 <section class="section">
-  <div class="sh"><div class="st">U.S. SECTOR LEADERSHIP</div><div class="sn">Sorted by today · relative strength vs S&P</div></div>
+  <div class="sh"><div class="st">U.S. SECTOR LEADERSHIP</div><div class="sn">Today + long-horizon return heatmap · relative strength vs S&P</div></div>
   <div class="body" id="sectors"></div>
 </section>
 <section class="section">
-  <div class="sh"><div class="st">U.S. STYLE / FACTOR TAPE</div><div class="sn">Who is leading beneath the index?</div></div>
+  <div class="sh"><div class="st">U.S. STYLE / FACTOR TAPE</div><div class="sn">Leadership, breadth and long-horizon context</div></div>
   <div class="body" id="factors"></div>
 </section>
 </div>
@@ -496,7 +554,7 @@ body{font-family:Inter,"Segoe UI",Arial,sans-serif;background:#F2F3F6;color:#292
 <div id="allocation">
 <section class="section">
   <div class="sh"><div class="st">SYSTEMATIC TACTICAL ALLOCATION</div><div class="sn">Daily OW / Neutral / UW signal · tactical score with long-term context</div></div>
-  <div class="body"><div class="tableScroll"><table class="matrix compact allocationTable"><thead><tr><th>Asset class</th><th>View</th><th>Valuation / Carry</th><th>Score</th><th>1M</th><th>3M</th><th>6M</th><th>1Y</th><th>3Y</th><th>5Y</th><th>60D vol</th><th style="text-align:left">Main signal</th></tr></thead><tbody id="signals"></tbody></table></div><div class="details"><summary>Signal methodology</summary><div class="method">50% multi-horizon risk-adjusted trend (1M/3M/6M = 50/30/20), 25% relative strength versus a relevant benchmark, and 25% cross-asset regime alignment. Score ≥ +25 = Overweight; ≤ −25 = Underweight; otherwise Neutral.<br><br><b>Asset lens:</b> equity ETFs show portfolio P/E / earnings yield / dividend yield where available; fixed-income ETFs show issuer YTM / duration / SEC yield / OAS; real-asset ETFs are not given an earnings multiple.</div></div></div>
+  <div class="body"><div class="tableScroll"><table class="matrix compact allocationTable"><thead><tr><th>Asset class</th><th>View</th><th>Valuation / Carry</th><th>Score</th><th>1M</th><th>3M</th><th>6M</th><th>YTD</th><th>1Y</th><th>3Y</th><th>5Y</th><th>60D vol</th><th style="text-align:left">Main signal</th></tr></thead><tbody id="signals"></tbody></table></div><div class="details"><summary>Signal methodology</summary><div class="method">50% multi-horizon risk-adjusted trend (1M/3M/6M = 50/30/20), 25% relative strength versus a relevant benchmark, and 25% cross-asset regime alignment. Score ≥ +25 = Overweight; ≤ −25 = Underweight; otherwise Neutral.<br><br><b>Asset lens:</b> equity ETFs show portfolio P/E / earnings yield / dividend yield where available; fixed-income ETFs show issuer YTM / duration / SEC yield / OAS; real-asset ETFs are not given an earnings multiple.</div></div></div>
 </section>
 </div>
 
@@ -537,9 +595,9 @@ body{font-family:Inter,"Segoe UI",Arial,sans-serif;background:#F2F3F6;color:#292
 </div>
 <div id="detailPopover" class="detailPopover" role="dialog" aria-live="polite"></div>
 <script>
-function n(x,d=2){return x===null||x===undefined||Number.isNaN(Number(x))?'—':Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})}
-function pct(x,d=2){return x===null||x===undefined?'—':`${x>=0?'+':''}${n(x,d)}%`}
-function bp(x,d=0){return x===null||x===undefined?'—':`${x>=0?'+':''}${n(x,d)} bp`}
+function n(x,d=2){return x===null||x===undefined||Number.isNaN(Number(x))?'n.a.':Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function pct(x,d=2){return x===null||x===undefined?'n.a.':`${x>=0?'+':''}${n(x,d)}%`}
+function bp(x,d=0){return x===null||x===undefined?'n.a.':`${x>=0?'+':''}${n(x,d)} bp`}
 function cls(x){return x>0?'pos':x<0?'neg':'neu'}
 const HEAT_LIMITS={
  '1d':[0.35,1.0,2.0],'1w':[0.8,2.0,4.0],'1m':[1.5,4.0,8.0],
@@ -553,7 +611,7 @@ function heatH(x,h='1d'){
  const level=a>=lim[2]?3:a>=lim[1]?2:a>=lim[0]?1:0;
  return level?(Number(x)>0?'heatp':'heatn')+level:'';
 }
-function returnCell(v,h,d=2){const txt=(v===null||v===undefined)?'N/A':pct(v,d);return '<td class="'+cls(v)+' '+heatH(v,h)+'">'+txt+'</td>'}
+function returnCell(v,h,d=2){const txt=(v===null||v===undefined)?'n.a.':pct(v,d);return '<td class="'+cls(v)+' '+heatH(v,h)+'">'+txt+'</td>'}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 const ASSET_SYMBOLS={spx:'^GSPC',nasdaq:'^IXIC',russell:'^RUT',sox:'^SOX',es:'ES=F',nq:'NQ=F',vix:'^VIX',stoxx50:'^STOXX50E',ftse:'^FTSE',nikkei:'^N225',kospi:'^KS11',hsi:'^HSI',csi300:'000300.SS',eem:'EEM',dxy:'DX-Y.NYB',usdjpy:'JPY=X',eurusd:'EURUSD=X',usdcnh:'CNH=X',brent:'BZ=F',wti:'CL=F',gold:'GC=F',copper:'HG=F',btc:'BTC-USD'};
 const ASSET_LENS_PROXY={spx:'SPY',nasdaq:'QQQ',russell:'IWM',sox:'SOXX',es:'SPY',nq:'QQQ',stoxx50:'FEZ',ftse:'EWU',nikkei:'EWJ',kospi:'EWY',hsi:'EWH',csi300:'ASHR',eem:'EEM'};
@@ -569,24 +627,25 @@ function valuationHTML(v,sym){
  return '<div'+infoAttrs('stock',sym)+'><div class="valmain">'+value+' <span class="infoGlyph">i</span></div><div class="valmetric">'+esc(label)+(v.stale?' · cached':'')+'</div>'+secondary+'</div>';
 }
 function fundamentalHTML(v,sym){
- v=v||{}; let a='—',b='',toneA='',toneB='';
+ v=v||{}; let a='n.a.',b='n.a.',toneA='mutedValue',toneB='mutedValue';
  if(v.return_on_equity!==null&&v.return_on_equity!==undefined&&v.metric==='P/B'){a='ROE '+n(v.return_on_equity,1)+'%';toneA=valueTone(v.return_on_equity)}
  else if(v.revenue_growth!==null&&v.revenue_growth!==undefined){a='Rev '+pct(v.revenue_growth,0);toneA=valueTone(v.revenue_growth)}
  if(v.eps_revision_30d!==null&&v.eps_revision_30d!==undefined){b='EPS rev '+pct(v.eps_revision_30d,1);toneB=valueTone(v.eps_revision_30d)}
  else if(v.fcf_yield!==null&&v.fcf_yield!==undefined){b='FCF yld '+n(v.fcf_yield,1)+'%';toneB=valueTone(v.fcf_yield)}
  else if(v.fcf_margin!==null&&v.fcf_margin!==undefined){b='FCF mgn '+n(v.fcf_margin,1)+'%';toneB=valueTone(v.fcf_margin)}
- else if(v.operating_margin!==null&&v.operating_margin!==undefined){b='Op mgn '+n(v.operating_margin,1)+'%'}
+ else if(v.operating_margin!==null&&v.operating_margin!==undefined){b='Op mgn '+n(v.operating_margin,1)+'%';toneB=''}
  return '<div class="fundwrap staticFund"><div class="fundmain '+toneA+'">'+a+'</div><div class="fundsub '+toneB+'">'+b+'</div></div>';
 }
 function etfLensHTML(l,sym){
  l=l||{};
  if(l.type==='fixed_income'){
-  const main=l.ytm!==null&&l.ytm!==undefined?'YTM '+n(l.ytm,2)+'%':'—';
-  const sub=(l.duration!==null&&l.duration!==undefined?'Dur '+n(l.duration,1)+'y':'')+(l.sec_yield!==null&&l.sec_yield!==undefined?' · SEC '+n(l.sec_yield,2)+'%':'');
+  const main=l.ytm!==null&&l.ytm!==undefined?'YTM '+n(l.ytm,2)+'%':'n.a.';
+  const parts=[]; if(l.duration!==null&&l.duration!==undefined)parts.push('Dur '+n(l.duration,1)+'y'); if(l.sec_yield!==null&&l.sec_yield!==undefined)parts.push('SEC '+n(l.sec_yield,2)+'%');
+  const sub=parts.length?parts.join(' · '):'carry details n.a.';
   return '<div'+infoAttrs('etf',sym)+'><div class="etfmain">'+main+' <span class="infoGlyph">i</span></div><div class="etfsub">'+sub+'</div></div>';
  }
  if(l.type==='equity'){
-  const main=l.pe!==null&&l.pe!==undefined?(l.pe_label||'P/E')+' '+n(l.pe,1)+'×':'—';
+  const main=l.pe!==null&&l.pe!==undefined?(l.pe_label||'P/E')+' '+n(l.pe,1)+'×':'n.a.';
   const sub=(l.earnings_yield!==null&&l.earnings_yield!==undefined?'E/P '+n(l.earnings_yield,1)+'%':'')+(l.yield!==null&&l.yield!==undefined?' · Div '+n(l.yield,1)+'%':'');
   return '<div'+infoAttrs('etf',sym)+'><div class="etfmain">'+main+' <span class="infoGlyph">i</span></div><div class="etfsub">'+sub+'</div></div>';
  }
@@ -603,14 +662,18 @@ function detailRow(label,value,opt={}){
  const clsx=opt.tone?valueTone(opt.raw):'';
  return '<div class="detailRow"><div class="detailLabel">'+esc(label)+'</div><div class="detailValue '+clsx+'">'+esc(value)+'</div></div>';
 }
-function fmtMultiple(v){return v===null||v===undefined?'—':n(v,1)+'×'}
-function fmtPct1(v){return v===null||v===undefined?'—':pct(v,1)}
-function fmtPct0(v){return v===null||v===undefined?'—':pct(v,0)}
+function fmtMultiple(v){return v===null||v===undefined?'n.a.':n(v,1)+'×'}
+function fmtPct1(v){return v===null||v===undefined?'n.a.':pct(v,1)}
+function fmtPct0(v){return v===null||v===undefined?'n.a.':pct(v,0)}
 function stockHorizon(row,key){
  const v=row?.[key];
  if(v!==null&&v!==undefined)return pct(v);
- if(row?.history_start)return 'N/A · history from '+esc(row.history_start);
- return 'N/A';
+ if(row?.since_start!==null&&row?.since_start!==undefined&&row?.history_start){
+   const dt=new Date(row.history_start+'T00:00:00Z');
+   const lbl=Number.isNaN(dt.getTime())?row.history_start:dt.toLocaleDateString('en-US',{month:'short',year:'numeric',timeZone:'UTC'});
+   return 'Since '+lbl+' '+pct(row.since_start);
+ }
+ return 'n.a.';
 }
 function findStock(sym){
  const d=window.DATA||{};
@@ -628,23 +691,25 @@ function stockDetailHTML(sym){
   ['EV / Sales',fmtMultiple(v.enterprise_to_revenue)],
   ['P / Sales',fmtMultiple(v.price_to_sales)],
   ['P / Book',fmtMultiple(v.price_to_book)],
-  ['PEG',v.peg_ratio!==null&&v.peg_ratio!==undefined?n(v.peg_ratio,2)+'×':'—']
+  ['PEG',v.peg_ratio!==null&&v.peg_ratio!==undefined?n(v.peg_ratio,2)+'×':'n.a.']
  ];
  const quality=[
   ['Revenue growth',fmtPct1(v.revenue_growth),v.revenue_growth],
   ['Earnings growth',fmtPct1(v.earnings_growth),v.earnings_growth],
   ['EPS est. revision · 30D',fmtPct1(v.eps_revision_30d),v.eps_revision_30d],
-  ['Operating margin',v.operating_margin!==null&&v.operating_margin!==undefined?n(v.operating_margin,1)+'%':'—'],
-  ['FCF margin',v.fcf_margin!==null&&v.fcf_margin!==undefined?n(v.fcf_margin,1)+'%':'—'],
-  ['FCF yield',v.fcf_yield!==null&&v.fcf_yield!==undefined?n(v.fcf_yield,1)+'%':'—'],
-  ['ROE',v.return_on_equity!==null&&v.return_on_equity!==undefined?n(v.return_on_equity,1)+'%':'—'],
-  ['Debt / Equity',v.debt_to_equity!==null&&v.debt_to_equity!==undefined?n(v.debt_to_equity,1)+'%':'—']
+  ['Operating margin',v.operating_margin!==null&&v.operating_margin!==undefined?n(v.operating_margin,1)+'%':'n.a.'],
+  ['FCF margin',v.fcf_margin!==null&&v.fcf_margin!==undefined?n(v.fcf_margin,1)+'%':'n.a.'],
+  ['FCF yield',v.fcf_yield!==null&&v.fcf_yield!==undefined?n(v.fcf_yield,1)+'%':'n.a.'],
+  ['ROE',v.return_on_equity!==null&&v.return_on_equity!==undefined?n(v.return_on_equity,1)+'%':'n.a.'],
+  ['Debt / Equity',v.debt_to_equity!==null&&v.debt_to_equity!==undefined?n(v.debt_to_equity,1)+'%':'n.a.']
  ];
  const market=[
   ['1D',pct(row?.move),row?.move],
   ['1W',pct(row?.['1w']),row?.['1w']],
   ['1M',stockHorizon(row,'1m'),row?.['1m']],
+  ['3M',stockHorizon(row,'3m'),row?.['3m']],
   ['6M',stockHorizon(row,'6m'),row?.['6m']],
+  ['YTD',stockHorizon(row,'ytd'),row?.['ytd']],
   ['1Y',stockHorizon(row,'1y'),row?.['1y']],
   ['3Y',stockHorizon(row,'3y'),row?.['3y']],
   ['5Y',stockHorizon(row,'5y'),row?.['5y']],
@@ -664,14 +729,14 @@ function etfDetailHTML(sym){
  const d=window.DATA||{}, l=(d.etf_lens||{})[sym]||{};
  let body='';
  if(l.type==='fixed_income'){
-   body=detailRow('Yield to maturity',l.ytm!==null&&l.ytm!==undefined?n(l.ytm,2)+'%':'—')+
-        detailRow('Effective duration',l.duration!==null&&l.duration!==undefined?n(l.duration,2)+' years':'—')+
-        detailRow('30D SEC yield',l.sec_yield!==null&&l.sec_yield!==undefined?n(l.sec_yield,2)+'%':'—')+
-        detailRow('Option-adjusted spread',l.oas!==null&&l.oas!==undefined?n(l.oas,0)+' bp':'—');
+   body=detailRow('Yield to maturity',l.ytm!==null&&l.ytm!==undefined?n(l.ytm,2)+'%':'n.a.')+
+        detailRow('Effective duration',l.duration!==null&&l.duration!==undefined?n(l.duration,2)+' years':'n.a.')+
+        detailRow('30D SEC yield',l.sec_yield!==null&&l.sec_yield!==undefined?n(l.sec_yield,2)+'%':'n.a.')+
+        detailRow('Option-adjusted spread',l.oas!==null&&l.oas!==undefined?n(l.oas,0)+' bp':(sym==='BIL'?'n.a. · Treasury bill':'n.a.'));
  }else if(l.type==='equity'){
-   body=detailRow(l.pe_label||'P/E',l.pe!==null&&l.pe!==undefined?n(l.pe,1)+'×':'—')+
-        detailRow('Earnings yield',l.earnings_yield!==null&&l.earnings_yield!==undefined?n(l.earnings_yield,1)+'%':'—')+
-        detailRow('Dividend yield',l.yield!==null&&l.yield!==undefined?n(l.yield,2)+'%':'—');
+   body=detailRow(l.pe_label||'P/E',l.pe!==null&&l.pe!==undefined?n(l.pe,1)+'×':'n.a.')+
+        detailRow('Earnings yield',l.earnings_yield!==null&&l.earnings_yield!==undefined?n(l.earnings_yield,1)+'%':'n.a.')+
+        detailRow('Dividend yield',l.yield!==null&&l.yield!==undefined?n(l.yield,2)+'%':'n.a.');
  }else{
    body=detailRow('Primary lens','Trend / volatility / macro regime')+
         detailRow('Earnings valuation','Not applicable');
@@ -681,7 +746,7 @@ function etfDetailHTML(sym){
  const note=l.type==='fixed_income'?'Carry and rate sensitivity should be read together; a higher yield can come with longer duration or wider credit spread.':l.type==='equity'?'Portfolio-level ETF valuation can use a different aggregation methodology from a single-stock forward P/E.':'No earnings multiple is forced onto a real-asset exposure.';
  return '<div class="detailHead"><div><div class="detailKicker">'+kind+'</div><div class="detailTitle">'+esc(sym)+'</div></div>'+link+'</div>'+
  '<div class="detailSection"><div class="detailSectionTitle">'+(l.type==='fixed_income'?'Carry / Duration':'Portfolio lens')+'</div>'+body+'</div>'+
- '<div class="detailNote">'+esc(note)+(l.stale?' <span>Using last-good cached characteristics.</span>':'')+'</div>';
+ '<div class="detailNote">'+esc(note)+(l.partial_stale?' <span>Some issuer fields use the last-good/seed value.</span>':l.stale?' <span>Using last-good cached characteristics.</span>':'')+'</div>';
 }
 
 let popPinned=false,popHideTimer=null,currentInfoTarget=null;
@@ -727,7 +792,7 @@ document.addEventListener('click',e=>{
 window.addEventListener('scroll',()=>{if(!popPinned)closeInfo(false)},{passive:true});
 window.addEventListener('resize',()=>{if(currentInfoTarget&&getPopover().classList.contains('open'))positionPopover(currentInfoTarget)});
 
-function priceFmt(key,x){if(x===null||x===undefined)return'—'; if(['brent','wti','gold','btc'].includes(key))return '$'+n(x,x>=1000?0:2); if(['eurusd','usdcnh'].includes(key))return n(x,4); if(key==='usdjpy'||key==='dxy'||key==='vix')return n(x,2); return n(x,x>=1000?0:2)}
+function priceFmt(key,x){if(x===null||x===undefined)return'n.a.'; if(['brent','wti','gold','btc'].includes(key))return '$'+n(x,x>=1000?0:2); if(['eurusd','usdcnh'].includes(key))return n(x,4); if(key==='usdjpy'||key==='dxy'||key==='vix')return n(x,2); return n(x,x>=1000?0:2)}
 function scoreGauge(v){let pos=Math.max(0,Math.min(100,(v+100)/2));return `<div class="scorebar"><i style="left:${pos}%"></i></div>`}
 
 function renderRegime(d){
@@ -741,7 +806,7 @@ function renderRegime(d){
  ${regGauge('Inflation pressure',inf,inf>=25?'Rising':inf<=-25?'Easing':'Stable')}`;
 }
 function regGauge(title,v,desc){return `<div class="regcell"><div class="regtitle">${title}</div><div class="regbig">${v>=0?'+':''}${v}</div><div class="gauge"><span style="width:${(v+100)/2}%"></span></div><div class="regdesc">${desc}</div></div>`}
-function curveName(c){let a=c['2Y']?.bp1d,b=c['10Y']?.bp1d,s=c['2s10s']?.bp1d||0;if(a===undefined||b===undefined)return'—';if(a>0&&b>0)return s>1?'Bear steepening':s<-1?'Bear flattening':'Parallel selloff';if(a<0&&b<0)return s>1?'Bull steepening':s<-1?'Bull flattening':'Parallel rally';if(a<0&&b>0)return'Twist steepening';if(a>0&&b<0)return'Twist flattening';return'Mixed'}
+function curveName(c){let a=c['2Y']?.bp1d,b=c['10Y']?.bp1d,s=c['2s10s']?.bp1d||0;if(a===undefined||b===undefined)return'Unavailable';if(a>0&&b>0)return s>1?'Bear steepening':s<-1?'Bear flattening':'Parallel selloff';if(a<0&&b<0)return s>1?'Bull steepening':s<-1?'Bull flattening':'Parallel rally';if(a<0&&b>0)return'Twist steepening';if(a>0&&b<0)return'Twist flattening';return'Mixed'}
 function renderTakeaways(d){document.getElementById('takeaways').innerHTML=(d.takeaways||[]).map((x,i)=>`<div class="take"><b>${String(i+1).padStart(2,'0')}</b><p>${esc(x)}</p></div>`).join('')}
 
 function assetLensFallback(k){
@@ -822,17 +887,17 @@ function renderInternals(d){
 
 function renderSectors(d){
  let x=d.sectors||[];
- document.getElementById('sectors').innerHTML='<div class="tableScroll"><table class="matrix compact longHorizonTable"><thead><tr><th>Sector</th><th>ETF</th><th>Valuation</th><th>1D</th><th>1W</th><th>1M</th><th>3M</th><th>6M</th><th>1Y</th><th>3Y</th><th>5Y</th><th>1M vs S&P</th></tr></thead><tbody>'+
+ document.getElementById('sectors').innerHTML='<div class="tableScroll"><table class="matrix compact longHorizonTable"><thead><tr><th>Sector</th><th>ETF</th><th>Valuation</th><th>1D</th><th>1W</th><th>1M</th><th>3M</th><th>6M</th><th>YTD</th><th>1Y</th><th>3Y</th><th>5Y</th><th>1M vs S&P</th></tr></thead><tbody>'+
  x.map(r=>'<tr><td>'+qlink(r.symbol,r.name,'symbolLink')+'</td><td>'+qlink(r.symbol,r.symbol,'symbolLink')+'</td><td>'+etfLensHTML(r.lens,r.symbol)+'</td>'+
-   returnCell(r['1d'],'1d')+returnCell(r['1w'],'1w')+returnCell(r['1m'],'1m')+returnCell(r['3m'],'3m')+returnCell(r['6m'],'6m')+
+   returnCell(r['1d'],'1d')+returnCell(r['1w'],'1w')+returnCell(r['1m'],'1m')+returnCell(r['3m'],'3m')+returnCell(r['6m'],'6m')+returnCell(r['ytd'],'ytd')+
    returnCell(r['1y'],'1y')+returnCell(r['3y'],'3y')+returnCell(r['5y'],'5y')+returnCell(r.rel1m,'relative')+'</tr>').join('')+
  '</tbody></table></div>';
 }
 function renderFactors(d){
  let x=d.factors||[];
- document.getElementById('factors').innerHTML='<div class="tableScroll"><table class="matrix compact longHorizonTable"><thead><tr><th>Factor</th><th>ETF</th><th>Valuation</th><th>1D</th><th>1W</th><th>1M</th><th>3M</th><th>6M</th><th>1Y</th><th>3Y</th><th>5Y</th><th>1M vs S&P</th></tr></thead><tbody>'+
+ document.getElementById('factors').innerHTML='<div class="tableScroll"><table class="matrix compact longHorizonTable"><thead><tr><th>Factor</th><th>ETF</th><th>Valuation</th><th>1D</th><th>1W</th><th>1M</th><th>3M</th><th>6M</th><th>YTD</th><th>1Y</th><th>3Y</th><th>5Y</th><th>1M vs S&P</th></tr></thead><tbody>'+
  x.map(r=>'<tr><td>'+qlink(r.symbol,r.name,'symbolLink')+'</td><td>'+qlink(r.symbol,r.symbol,'symbolLink')+'</td><td>'+etfLensHTML(r.lens,r.symbol)+'</td>'+
-   returnCell(r['1d'],'1d')+returnCell(r['1w'],'1w')+returnCell(r['1m'],'1m')+returnCell(r['3m'],'3m')+returnCell(r['6m'],'6m')+
+   returnCell(r['1d'],'1d')+returnCell(r['1w'],'1w')+returnCell(r['1m'],'1m')+returnCell(r['3m'],'3m')+returnCell(r['6m'],'6m')+returnCell(r['ytd'],'ytd')+
    returnCell(r['1y'],'1y')+returnCell(r['3y'],'3y')+returnCell(r['5y'],'5y')+returnCell(r.rel1m,'relative')+'</tr>').join('')+
  '</tbody></table></div><details class="selectionDetails"><summary>How to read factor tape</summary><div class="method">Growth vs Value shows duration / earnings leadership; Equal Weight vs S&P shows breadth; Quality / Min Vol indicate whether leadership is defensive or high-beta. ETF P/E is a portfolio-level field from the public quote source and should not be read as the same methodology as a single-stock forward P/E.</div></details>';
 }
@@ -867,7 +932,7 @@ function coreRow(r,showGroup){
  const main='<tr>'+
    '<td class="coreName"><div class="nm">'+(r.material?'<span class="materialDot"></span>':'')+qlink(r.symbol,r.display,'symbolLink')+'</div><div class="sub">'+sub+'</div></td>'+
    '<td class="num '+cls(r.move)+' '+heatH(r.move,'1d')+'"><b>'+pct(r.move)+'</b></td>'+
-   '<td class="num '+cls(r["1w"])+'">'+pct(r["1w"])+'</td>'+
+   '<td class="num '+cls(r["1w"])+' '+heatH(r["1w"],"1w")+'">'+pct(r["1w"])+'</td>'+
    '<td class="num '+cls(r.relative)+' '+heatH(r.relative,'relative')+'">'+pct(r.relative)+'</td>'+
    '<td class="valn">'+valuationHTML(r.valuation,r.symbol)+'</td>'+
    '<td class="fundn">'+fundamentalHTML(r.valuation,r.symbol)+'</td>'+
@@ -911,11 +976,12 @@ function renderCoreCoverage(rows){
 
 function renderBroadTable(rows){
  if(!rows||!rows.length)return '<div class="emptyState">No broader large-cap name crossed the material-move threshold.</div>';
- return '<table class="researchTable broadResearchTable"><thead><tr><th>Name</th><th>Sector</th><th>1D</th><th>vs Sector</th><th>Valuation</th><th>Fundamentals</th><th>Catalyst</th></tr></thead><tbody>'+
+ return '<table class="researchTable broadResearchTable"><thead><tr><th>Name</th><th>Sector</th><th>1D</th><th>1W</th><th>vs Sector</th><th>Valuation</th><th>Fundamentals</th><th>Catalyst</th></tr></thead><tbody>'+
  rows.map(function(r){return '<tr>'+
    '<td class="coreName"><div class="nm">'+qlink(r.symbol,r.display,'symbolLink')+'</div><div class="sub">'+esc(r.company)+'</div></td>'+
    '<td>'+esc(r.sector)+'</td>'+
    '<td class="num '+cls(r.move)+' '+heatH(r.move,'1d')+'"><b>'+pct(r.move)+'</b></td>'+
+   '<td class="num '+cls(r["1w"])+' '+heatH(r["1w"],"1w")+'">'+pct(r["1w"])+'</td>'+
    '<td class="num '+cls(r.relative)+' '+heatH(r.relative,'relative')+'">'+pct(r.relative)+'</td>'+
    '<td class="valn">'+valuationHTML(r.valuation,r.symbol)+'</td>'+
    '<td class="fundn">'+fundamentalHTML(r.valuation,r.symbol)+'</td>'+
@@ -932,7 +998,7 @@ function renderSignals(d){
   return '<tr><td><div class="ticker">'+qlink(r.symbol,r.name,'symbolLink')+'</div><div class="sub">'+qlink(r.symbol,r.symbol,'symbolLink')+' · '+r.class+'</div></td>'+
   '<td><span class="pill '+(r.view==='OVERWEIGHT'?'ow':r.view==='UNDERWEIGHT'?'uw':'nt')+'">'+r.view+'</span></td>'+
   '<td>'+etfLensHTML(r.lens,r.symbol)+'</td><td class="barcell"><div style="display:flex;justify-content:space-between;gap:6px"><b class="'+cls(r.score)+'">'+(r.score>=0?'+':'')+n(r.score,0)+'</b></div>'+scoreGauge(r.score)+'</td>'+
-  returnCell(r['1m'],'1m')+returnCell(r['3m'],'3m')+returnCell(r['6m'],'6m')+returnCell(r['1y'],'1y')+returnCell(r['3y'],'3y')+returnCell(r['5y'],'5y')+
+  returnCell(r['1m'],'1m')+returnCell(r['3m'],'3m')+returnCell(r['6m'],'6m')+returnCell(r['ytd'],'ytd')+returnCell(r['1y'],'1y')+returnCell(r['3y'],'3y')+returnCell(r['5y'],'5y')+
   '<td>'+(r.vol!==null?n(r.vol,1)+'%':'Not available')+'</td><td class="driver">'+esc(r.driver)+'<div class="sub">Trend '+(r.trend>=0?'+':'')+n(r.trend,0)+' · Relative '+(r.relative>=0?'+':'')+n(r.relative,0)+' · Macro '+(r.macro>=0?'+':'')+n(r.macro,0)+'</div></td></tr>';
  }).join('');
 }
