@@ -870,7 +870,7 @@ def tactical_signals(histories, regime, etf_lens=None):
         comps={'Trend':50*trend,'Relative':25*rel,'Macro':25*macro}
         top=max(comps,key=lambda k:abs(comps[k]))
         driver=f'{top} {"supportive" if comps[top]>=0 else "negative"}'
-        out.append({'symbol':sym,'name':name,'class':cls_,'view':view,'score':round(score,1),'1d':m.get('1d'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'vol':m.get('vol60'),'driver':driver,
+        out.append({'symbol':sym,'name':name,'class':cls_,'view':view,'score':round(score,1),'1d':m.get('1d'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'ytd':m.get('ytd'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'vol':m.get('vol60'),'driver':driver,
                     'trend':round(100*trend,1),'relative':round(100*rel,1),'macro':round(100*macro,1),'lens':(etf_lens or {}).get(sym,{})})
     return out
 
@@ -1408,7 +1408,7 @@ def factors_pack(hist,etf_lens=None):
     for sym,name in FACTOR_ETFS.items():
         m=hist.get(sym)
         if not m: continue
-        rows.append({'symbol':sym,'name':name,'1d':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'rel1m':(m.get('1m') or 0)-(sp.get('1m') or 0),'lens':(etf_lens or {}).get(sym,{})})
+        rows.append({'symbol':sym,'name':name,'1d':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'ytd':m.get('ytd'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'rel1m':(m.get('1m') or 0)-(sp.get('1m') or 0),'lens':(etf_lens or {}).get(sym,{})})
     return sorted(rows,key=lambda x:(x['1d'] if x['1d'] is not None else -999),reverse=True)
 
 def sectors_pack(hist,etf_lens=None):
@@ -1416,7 +1416,7 @@ def sectors_pack(hist,etf_lens=None):
     for sym,name in SECTOR_ETFS.items():
         m=hist.get(sym)
         if not m: continue
-        rows.append({'symbol':sym,'name':name,'1d':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'rel1m':(m.get('1m') or 0)-(sp.get('1m') or 0),'lens':(etf_lens or {}).get(sym,{})})
+        rows.append({'symbol':sym,'name':name,'1d':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'ytd':m.get('ytd'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'rel1m':(m.get('1m') or 0)-(sp.get('1m') or 0),'lens':(etf_lens or {}).get(sym,{})})
     return sorted(rows,key=lambda x:(x['1d'] if x['1d'] is not None else -999),reverse=True)
 
 def mover_score(m, relative):
@@ -1651,6 +1651,19 @@ def bond_etf_characteristics():
             oas=_first_num(text,[r'Option Adjusted Spread.{0,120}?(-?\d+(?:\.\d+)?)\s*bps'])
             vals={'type':'fixed_income','ytm':ytm,'duration':dur,'sec_yield':sec,'oas':oas,'source_url':url,'source':'issuer page','stale':False}
             if any(vals.get(k) is not None for k in ('ytm','duration','sec_yield')):
+                p=prev.get(sym) if isinstance(prev,dict) else None
+                backfilled=[]
+                for k in ('ytm','duration','sec_yield','oas'):
+                    if vals.get(k) is None:
+                        pv=p.get(k) if isinstance(p,dict) else None
+                        sv=(seeds.get(sym) or {}).get(k)
+                        if pv is not None:
+                            vals[k]=pv; backfilled.append(k)
+                        elif sv is not None:
+                            vals[k]=sv; backfilled.append(k)
+                vals['partial_stale']=bool(backfilled)
+                if backfilled:
+                    vals['source_status']='issuer page + last-good/seed fallback'
                 return sym,vals
             raise ValueError('no characteristics parsed')
         except Exception:
@@ -1761,7 +1774,7 @@ def stock_monitor_pack():
                 if category!='Company / sector news':
                     expl=f'{category}: {news[0]["title"]}'
                     link=news[0]['link']; conf='Headline-linked'
-        row={'symbol':sym,'display':sym.replace('.KS',''),'company':company,'group':group,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'6m':m.get('6m'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'since_start':m.get('since_start'),'history_start':m.get('history_start'),'relative':rel,'score':score,'material':flag,'explanation':expl,'link':link,'confidence':conf,'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,merge_valuation(valuations.get(sym),core_details.get(sym)))}
+        row={'symbol':sym,'display':sym.replace('.KS',''),'company':company,'group':group,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'ytd':m.get('ytd'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'since_start':m.get('since_start'),'history_start':m.get('history_start'),'relative':rel,'score':score,'material':flag,'explanation':expl,'link':link,'confidence':conf,'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,merge_valuation(valuations.get(sym),core_details.get(sym)))}
         core.append(row)
         if flag: material.append(row)
     rank={g:i for i,g in enumerate(CORE_GROUP_ORDER)}
@@ -1773,7 +1786,7 @@ def stock_monitor_pack():
         if not m or m.get('1d') is None: continue
         rel=m['1d']-(b.get('1d') or 0) if b else None
         if abs(m['1d'])<3.0 and abs(rel or 0)<2.0: continue
-        broad_rows.append({'symbol':sym,'display':sym,'company':company,'sector':sector,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'6m':m.get('6m'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'relative':rel,'score':mover_score(m,rel),'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,valuations.get(sym))})
+        broad_rows.append({'symbol':sym,'display':sym,'company':company,'sector':sector,'move':m.get('1d'),'1w':m.get('1w'),'1m':m.get('1m'),'3m':m.get('3m'),'6m':m.get('6m'),'ytd':m.get('ytd'),'1y':m.get('1y'),'3y':m.get('3y'),'5y':m.get('5y'),'since_start':m.get('since_start'),'history_start':m.get('history_start'),'relative':rel,'score':mover_score(m,rel),'quality_issue':m.get('quality_issue'),'valuation':choose_valuation(sym,valuations.get(sym))})
     broad_rows.sort(key=lambda r:-r['score']); broad_rows=broad_rows[:10]
     broad_details=yahoo_fundamental_detail_pack({r['symbol'] for r in broad_rows})
     for r in broad_rows:
