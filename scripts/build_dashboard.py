@@ -710,6 +710,29 @@ def _official_calendar_fallback():
                 rows.append((dt.astimezone(SGT),group))
     except: pass
 
+    # BLS HTML schedule fallback. This is still an official BLS source and is
+    # useful when the ICS endpoint is blocked by a CI runner.
+    try:
+        bls_html=req(f'https://www.bls.gov/schedule/{now.year}/home.htm',timeout=12).text
+        for df in pd.read_html(StringIO(bls_html)):
+            for _,row in df.astype(str).iterrows():
+                txt=' | '.join(row.tolist()); lo=txt.lower(); group=None
+                if 'employment situation' in lo: group='Jobs Report'
+                elif 'consumer price index' in lo and 'real earnings' not in lo: group='CPI Inflation'
+                elif 'producer price index' in lo: group='PPI Inflation'
+                elif 'job openings and labor turnover' in lo: group='JOLTS'
+                if not group: continue
+                m=re.search(r'(?:Monday|Tuesday|Wednesday|Thursday|Friday),?\s+([A-Z][a-z]+)\s+(\d{1,2}),?\s+(20\d{2}).*?(\d{1,2}:\d{2})\s*(AM|PM)',txt,re.I)
+                if not m: continue
+                try:
+                    dt=datetime.strptime(f'{m.group(1)} {m.group(2)} {m.group(3)} {m.group(4)} {m.group(5)}','%B %d %Y %I:%M %p').replace(tzinfo=NY_TZ)
+                except Exception:
+                    continue
+                if dt>=now-timedelta(days=2):
+                    rows.append((dt.astimezone(SGT),group))
+    except Exception:
+        pass
+
     # BEA release schedule
     try:
         for df in pd.read_html(StringIO(req('https://www.bea.gov/news/schedule/',timeout=12).text)):
