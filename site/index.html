@@ -613,6 +613,7 @@ body{background:#F4F6F8;color:#292F40}
     <div class="eyebrow">Daily market storyline · connected causal map</div>
     <h2 id="commentaryHeadline">Loading storyline…</h2>
     <div class="dek" id="commentaryDek"></div>
+    <div class="storyFootnote" id="storyAsOf" style="margin-top:6px"></div>
   </div>
   <div class="storylineWrap">
     <div class="storySummaryBox"><div class="lbl">90-second story</div><div class="txt" id="meetingSummary"></div></div>
@@ -1087,6 +1088,9 @@ function renderCommentary(d){
  const cm=d.commentary||{}, s=cm.storyline||{};
  document.getElementById('commentaryHeadline').textContent=cm.headline||'Daily market storyline';
  document.getElementById('commentaryDek').textContent=cm.dek||'';
+ const sa=d.story_asof||{}, snap=sa.snapshot_time?new Date(sa.snapshot_time):null;
+ const snapTxt=snap&&!Number.isNaN(snap.getTime())?snap.toLocaleString('en-SG',{timeZone:'Asia/Singapore',hour12:false}):'n.a.';
+ document.getElementById('storyAsOf').textContent='Based on U.S. cash close '+(sa.market_date||'n.a.')+' · snapshot '+snapTxt+' SGT';
  document.getElementById('meetingSummary').textContent=s.summary||cm.meeting_summary||'';
  const ev=d.story_evidence||{}, evs=ev.sources||[];
  document.getElementById('storyEvidence').innerHTML='<div class="evidencePane fact"><div class="evidenceTag">FACT</div><div class="evidenceText">'+esc(ev.fact||'Observed facts n.a.')+'</div></div><div class="evidencePane interpretation"><div class="evidenceTag">INTERPRETATION</div><div class="evidenceText">'+esc(ev.interpretation||'Interpretation n.a.')+'</div></div><div class="evidencePane implication"><div class="evidenceTag">IMPLICATION</div><div class="evidenceText">'+esc(ev.implication||'Implication n.a.')+'</div></div><div class="evidenceSources">Sources · '+evs.map(x=>x.url?'<a target="_blank" rel="noopener noreferrer" href="'+esc(x.url)+'">'+esc(x.name||'Source')+(x.asof?' · '+esc(x.asof):'')+' ↗</a>':esc(x.name||'Source')).join(' · ')+'</div>';
