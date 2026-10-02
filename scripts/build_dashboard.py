@@ -1198,6 +1198,7 @@ def build_commentary(payload):
     sectors=payload.get('sectors',[]); factors=payload.get('factors',[])
     core=payload.get('core_tape',[]); broad=payload.get('broad_movers',[])
     signals=payload.get('signals',[]); cal=payload.get('calendar',[])
+    upcoming_cal=[e for e in cal if e.get('status')!='RELEASED']
     regime=payload.get('regime',{}); cv=payload.get('cvol',{})
 
     def mv(k,field='1d'): return (m.get(k) or {}).get(field)
@@ -1379,8 +1380,8 @@ def build_commentary(payload):
     alloc_why=('This prevents the daily commentary from becoming purely narrative. If the written story says equities are constructive but the systematic score is deteriorating, that disagreement itself is information and should lower conviction.')
 
     next_body=''
-    if cal:
-        next_body+='The next major catalysts are '+'; '.join(f'{e["title"]} on {e["date"]} at {e["time"]} SGT' for e in cal[:4])+'. '
+    if upcoming_cal:
+        next_body+='The next major catalysts are '+'; '.join(f'{e["title"]} on {e["date"]} at {e["time"]} SGT' for e in upcoming_cal[:4])+'. '
     if y2 is not None and y10 is not None and y2<0<y10:
         next_body+=('The cleanest test of today’s long-end thesis is the next macro release: if data are soft, 2Y stays down and 10Y / 30Y remain high, the market is confirming a term-premium / supply problem. '
                     'If 2Y jumps as well, the interpretation shifts back toward Fed repricing. ')
@@ -1415,7 +1416,7 @@ def build_commentary(payload):
     checks=[]
     if y2 is not None and y10 is not None and y2<0<y10:
         checks.append({'event':'Long-end thesis test','test':'Soft data + 2Y lower + 10Y/30Y still high = term premium / supply confirmed. 2Y higher too = story shifts back toward Fed repricing.'})
-    for ev in cal[:3]:
+    for ev in upcoming_cal[:3]:
         checks.append({'event':f'{ev["title"]} · {ev["date"]} {ev["time"]} SGT','test':'Ask which asset should react first, then check whether the rest of the cross-asset tape confirms.'})
     if hy is not None and ccc is not None:
         checks.append({'event':'Credit confirmation','test':'Further HY / CCC widening alongside weaker equities would confirm that the move is becoming a broader risk event.'})
@@ -1446,7 +1447,7 @@ def build_commentary(payload):
     if core:
         biggest=max(core,key=lambda x:abs(x.get('move') or 0))
         meeting.append(f'The largest core-stock move was {biggest["display"]} {biggest["move"]:+.2f}%.')
-    if cal: meeting.append(f'The next major catalyst is {cal[0]["title"]} at {cal[0]["time"]} SGT; watch the 2Y first, then the long end and credit for confirmation.')
+    if upcoming_cal: meeting.append(f'The next major catalyst is {upcoming_cal[0]["title"]} at {upcoming_cal[0]["time"]} SGT; watch the 2Y first, then the long end and credit for confirmation.')
     meeting_summary=' '.join(meeting)
 
     bottom=('The day should be read as a chain, not as separate boxes: first identify equity leadership and breadth; second decide whether rates are being driven by the Fed path, real yields, inflation compensation or term premium; '
@@ -2217,6 +2218,11 @@ def build_dashboard():
     payload['morning_snapshot']=morning_snapshot(payload)
     payload['commentary']=build_commentary(payload)
     payload['story_evidence']=story_evidence_layers(payload)
+    payload['story_asof']={
+        'market_date':((market.get('spx') or {}).get('asof')),
+        'snapshot_time':sgt_now().isoformat(timespec='seconds'),
+        'label':'Latest completed U.S. cash session + current Singapore morning snapshot'
+    }
     quality=[]
     for key,row in market.items():
         if row.get('quality_issue'):
